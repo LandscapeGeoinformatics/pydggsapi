@@ -30,7 +30,7 @@ def test_core_dggs_zoneinfo_empty_config():
 
 
 def test_core_dggs_zoneinfo():
-    os.environ['dggs_api_config'] = './dggs_api_config.json'
+    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)

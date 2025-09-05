@@ -38,6 +38,20 @@
           }
         }
       }
+    },
+    "3": {
+      "suitability_hytruck_parquet": {
+        "title": "Suitability Modelling for Hytruck in parquet format",
+        "description": "Desc",
+        "collection_provider": {
+          "providerId": "parquet",
+          "dggrsId": "igeo7",
+          "maxzonelevel": 9,
+          "getdata_params": {
+            "datasource_id": "hytruck"
+          }
+        }
+      }
     }
   },
   "dggrs": {
@@ -89,6 +103,20 @@
                 "5": "res5",
                 "6": "res6"
               }
+            }
+          }
+        }
+      }
+    },
+    "3": {
+      "parquet": {
+        "classname": "parquet_collection_provider.ParquetCollectionProvider",
+        "initial_params": {
+          "datasources": {
+            "hytruck": {
+              "filepath": "<local file path or path of a cloud bucket>",
+			  "id_col": "cell_ids",
+			  "data_cols": ["*"]
             }
           }
         }

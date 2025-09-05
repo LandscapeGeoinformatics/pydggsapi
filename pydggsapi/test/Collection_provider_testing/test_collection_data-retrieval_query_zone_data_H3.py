@@ -9,6 +9,9 @@ import tempfile
 import shapely
 import json
 import geopandas as gpd
+import warnings
+warnings.filterwarnings('ignore')
+
 
 
 aoi = [[25.329803558251513, 58.634545591972696],
@@ -26,7 +29,7 @@ aoi = shapely.Polygon(aoi)
 
 
 def test_data_retrieval_h3():
-    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
+    os.environ['dggs_api_config'] = '../dggs_api_config.json'
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)

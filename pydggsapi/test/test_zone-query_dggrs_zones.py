@@ -48,7 +48,7 @@ def test_zone_query_dggrs_zones_empty_config():
 
 
 def test_zone_query_dggrs_zones():
-    os.environ['dggs_api_config'] = './dggs_api_config.json'
+    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)

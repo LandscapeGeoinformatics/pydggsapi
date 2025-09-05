@@ -33,7 +33,7 @@ non_exist_aoi = shapely.Polygon(non_exist_aoi)
 
 
 def test_zone_query_dggrs_zones_VH3_2_IGEO7():
-    os.environ['dggs_api_config'] = './dggs_api_config.json'
+    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)

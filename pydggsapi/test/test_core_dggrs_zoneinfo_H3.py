@@ -20,7 +20,7 @@ non_exists = ['86411cb77ffffff']
 
 
 def test_core_dggs_zoneinfo_H3_2_IGEO7():
-    os.environ['dggs_api_config'] = './dggs_api_config.json'
+    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)
