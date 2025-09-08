@@ -74,9 +74,9 @@ RUN poetry install --only-root
 CMD [ \
     "sh", "-c", \
     "uvicorn pydggsapi.api:app \
-        --host ${PYDGGDSAPI_HOST:-0.0.0.0} \
-        --port ${PYDGGDSAPI_PORT:-8000} \
-        --workers ${PYDGGDSAPI_WORKERS:-8} \
-        --log-level ${PYDGGDSAPI_LOG_LEVEL:-info} \
+        --host ${PYDGGSAPI_HOST:-0.0.0.0} \
+        --port ${PYDGGSAPI_PORT:-8000} \
+        --workers ${PYDGGSAPI_WORKERS:-8} \
+        --log-level ${PYDGGSAPI_LOG_LEVEL:-info} \
     " \
 ]
