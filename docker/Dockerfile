@@ -3,7 +3,7 @@ LABEL description.short="DGGS API"
 LABEL description.long="OGC API for DGGS (Discretized Global Grid System) data management and processing."
 LABEL maintainer="Francis Charette-Migneault <francis.charette-migneault@crim.ca>"
 LABEL vendor="CRIM"
-LABEL version="0.1.3"
+LABEL version="0.1.4"
 
 ARG DGGRID_VERSION=8.41
 
