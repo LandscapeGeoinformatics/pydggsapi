@@ -10,7 +10,7 @@ import os
 import tempfile
 import logging
 from typing import Union, List
-from dggrid4py import DGGRIDv7
+from dggrid4py import DGGRIDv8
 import dggrid4py
 import shapely
 from dotenv import load_dotenv
@@ -27,7 +27,7 @@ class IGEO7Provider(AbstractDGGRSProvider):
     def __init__(self):
         executable = os.environ['DGGRID_PATH']
         working_dir = tempfile.mkdtemp()
-        self.dggrid_instance = DGGRIDv7(executable=executable, working_dir=working_dir, silent=True)
+        self.dggrid_instance = DGGRIDv8(executable=executable, working_dir=working_dir, silent=True)
         self.data = {
             0: {"Cells": 12, "Area (km^2)": 51006562.1724089, "CLS (km)": 8199.5003701},
             1: {"Cells": 72, "Area (km^2)": 7286651.7389156, "CLS (km)": 3053.2232428},
@@ -46,6 +46,16 @@ class IGEO7Provider(AbstractDGGRSProvider):
             14: {"Cells": 6782230728492, "Area (km^2)": 0.0000752, "CLS (km)": 0.0097855},
             15: {"Cells": 47475615099432, "Area (km^2)": 0.0000107, "CLS (km)": 0.0036986},
         }
+        self.dggrs = 'IGEO7'
+        self.address_params = {
+            'input_address_type': 'HIERNDX',
+            'input_hier_ndx_system': 'Z7',
+            'input_hier_ndx_form': 'DIGIT_STRING',
+            'output_address_type': 'HIERNDX',
+            'output_cell_label_type': 'OUTPUT_ADDRESS_TYPE',
+            'output_hier_ndx_system': 'Z7',
+            'output_hier_ndx_form': 'DIGIT_STRING',
+        }
 
     def convert(self, zoneIds: list, targedggrs: type[AbstractDGGRSProvider]):
         pass
@@ -61,30 +71,28 @@ class IGEO7Provider(AbstractDGGRSProvider):
 
     def generate_hexgrid(self, bbox, resolution):
         # ISEA7H grid at resolution, for extent of provided WGS84 rectangle into GeoDataFrame
-        gdf = self.dggrid_instance.grid_cell_polygons_for_extent('IGEO7', resolution, clip_geom=bbox, output_address_type='Z7_STRING')
+        gdf = self.dggrid_instance.grid_cell_polygons_for_extent(self.dggrs, resolution, clip_geom=bbox, **self.address_params)
         return gdf
 
     def generate_hexcentroid(self, bbox, resolution):
         # ISEA7H grid at resolution, for extent of provided WGS84 rectangle into GeoDataFrame
-        gdf = self.dggrid_instance.grid_cell_centroids_for_extent('IGEO7', resolution, clip_geom=bbox, output_address_type='Z7_STRING')
+        gdf = self.dggrid_instance.grid_cell_centroids_for_extent(self.dggrs, resolution, clip_geom=bbox, **self.address_params)
         return gdf
 
     def centroid_from_cellid(self, cellid: list, zone_level):
-        gdf = self.dggrid_instance.grid_cell_centroids_from_cellids(cellid, 'IGEO7', zone_level,
-                                                                    input_address_type='Z7_STRING', output_address_type='Z7_STRING')
+        gdf = self.dggrid_instance.grid_cell_centroids_from_cellids(cellid, self.dggrs, zone_level, **self.address_params)
         return gdf
 
     def hexagon_from_cellid(self, cellid: list, zone_level):
-        gdf = self.dggrid_instance.grid_cell_polygons_from_cellids(cellid, 'IGEO7', zone_level,
-                                                                   input_address_type='Z7_STRING', output_address_type='Z7_STRING')
+        gdf = self.dggrid_instance.grid_cell_polygons_from_cellids(cellid, self.dggrs, zone_level, **self.address_params)
         return gdf
 
     def cellid_from_centroid(self, geodf_points_wgs84, zoomlevel):
-        gdf = self.dggrid_instance.cells_for_geo_points(geodf_points_wgs84, True, 'IGEO7', zoomlevel, output_address_type='Z7_STRING')
+        gdf = self.dggrid_instance.cells_for_geo_points(geodf_points_wgs84, True, self.dggrs, zoomlevel, **self.address_params)
         return gdf
 
     def cellids_from_extent(self, clip_geom, zoomlevel):
-        gdf = self.dggrid_instance.grid_cellids_for_extent('IGEO7', zoomlevel, clip_geom=clip_geom, output_address_type='Z7_STRING')
+        gdf = self.dggrid_instance.grid_cellids_for_extent(self.dggrs, zoomlevel, clip_geom=clip_geom, **self.address_params)
         return gdf
 
     def get_zone_level_by_cls(self, cls_km: float):
@@ -107,8 +115,8 @@ class IGEO7Provider(AbstractDGGRSProvider):
         geojson = GeoJSONPolygon if (geometry == 'zone-region') else GeoJSONPoint
         try:
             for z in zone_levels:
-                gdf = method([cellId], 'IGEO7', z, clip_subset_type='COARSE_CELLS', clip_cell_res=base_level,
-                             input_address_type='Z7_STRING', output_address_type='Z7_STRING')
+                gdf = method([cellId], self.dggrs, z, clip_subset_type='COARSE_CELLS', clip_cell_res=base_level,
+                             **self.address_params)
                 g = [geojson(**shapely.geometry.mapping(g)) for g in gdf['geometry'].values.tolist()]
                 children[z] = DGGRSProviderZonesElement(**{'zoneIds': gdf['name'].astype(str).values.tolist(),
                                                            'geometry': g})
@@ -148,11 +156,10 @@ class IGEO7Provider(AbstractDGGRSProvider):
         if (parent_zone is not None):
             try:
                 parent_zone_level = self.get_cells_zone_level([parent_zone])[0]
-                childern_hex_gdf = self.dggrid_instance.grid_cell_polygons_from_cellids([parent_zone], 'IGEO7', zone_level,
+                childern_hex_gdf = self.dggrid_instance.grid_cell_polygons_from_cellids([parent_zone], self.dggrs, zone_level,
                                                                                         clip_subset_type='COARSE_CELLS',
                                                                                         clip_cell_res=parent_zone_level,
-                                                                                        input_address_type='Z7_STRING',
-                                                                                        output_address_type='Z7_STRING')
+                                                                                        **self.address_params)
                 childern_hex_gdf.set_index('name', inplace=True)
                 hex_gdf = hex_gdf.join(childern_hex_gdf, how='inner', rsuffix='_p') if (bbox is not None) else childern_hex_gdf
             except Exception as e:

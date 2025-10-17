@@ -4,7 +4,7 @@ import pytest
 from importlib import reload
 import os
 from pprint import pprint
-from dggrid4py import DGGRIDv7
+from dggrid4py import DGGRIDv8
 import tempfile
 import shapely
 import json

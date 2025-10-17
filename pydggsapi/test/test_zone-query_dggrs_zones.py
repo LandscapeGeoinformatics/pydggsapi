@@ -4,14 +4,14 @@ import pytest
 from importlib import reload
 import os
 from pprint import pprint
-from dggrid4py import DGGRIDv7
+from dggrid4py import DGGRIDv8
 import tempfile
 import shapely
 import json
 import geopandas as gpd
 
 working = tempfile.mkdtemp()
-dggrid = DGGRIDv7(os.environ['DGGRID_PATH'], working_dir=working, silent=True)
+dggrid = DGGRIDv8(os.environ['DGGRID_PATH'], working_dir=working, silent=True)
 
 aoi = [[25.329803558251513, 58.634545591972696],
        [25.329803558251513, 57.99111013411327],
