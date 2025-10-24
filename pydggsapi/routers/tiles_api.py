@@ -7,6 +7,7 @@ from typing import Annotated
 
 from pydggsapi.schemas.tiles.tiles import TilesRequest, TilesJSON
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import ZonesRequest, ZonesResponse
+from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoRequest
 from pydggsapi.schemas.ogc_dggs.dggrs_zones_data import ZonesDataRequest
 
 from pydggsapi.dependencies.api.mercator import Mercator
@@ -81,8 +82,9 @@ async def query_mvt_tiles(req: Request, tilesreq: TilesRequest = Depends(),
     tasks = []
     loop = asyncio.get_event_loop()
     for zoneid in zones_id_response.zones:
-        zonedatareq = ZonesDataRequest(zoneId=zoneid, dggrsId=tilesreq.dggrsId, collectionId=tilesreq.collectionId, depth="0")
-        tasks.append(dggrs_zones_data(req, zonedatareq,  _get_dggrs_description(tilesreq.dggrsId),
+        zoneinfo = ZoneInfoRequest(zoneId=zoneid, dggrsId=tilesreq.dggrsId, )
+        zonedatareq = ZonesDataRequest(collectionId=tilesreq.collectionId, depth="0")
+        tasks.append(dggrs_zones_data(req, zoneinfo, zonedatareq,  _get_dggrs_description(tilesreq.dggrsId),
                      dggrs, collection_info, collection_provider))
     tasks = loop.run_until_complete(asyncio.gather(*tasks))
     features = [{'geometry': shapely.from_geojson(json.dumps(i.geometry.__dict__)), 'properties': i.properties}
@@ -116,10 +118,3 @@ async def get_tiles_json(req: Request, collectionId: str):
         bbox = collection_info.extent.spatial.bbox
     return TilesJSON(**{'tilejson': '3.0.0', 'tiles': urls, 'vector_layers': [{'id': collectionId, 'fields': fields}],
                         'bounds': bbox, 'description': collection_info.description, 'name': collectionId})
-
-
-
-
-
-
-

@@ -1,0 +1,161 @@
+{
+  "collections": {
+    "1": {
+      "suitability_hytruck": {
+        "title": "Suitability Modelling for Hytruck",
+        "description": "Desc",
+	"extent": {"spatial": {"bbox":[[5.86307954788208, 47.31793212890625, 31.61196517944336, 70.0753173828125]]}},
+        "collection_provider": {
+          "providerId": "clickhouse",
+          "dggrsId": "igeo7",
+          "min_refinement_level": 5,
+          "max_refinement_level": 9,
+          "datasource_id": "hytruck_clickhouse"
+        }
+      }
+    },
+    "2": {
+      "suitability_hytruck_zarr": {
+        "title": "Suitability Modelling for Hytruck in Zarr format",
+        "description": "Desc",
+        "collection_provider": {
+          "providerId": "zarr",
+          "dggrsId": "igeo7",
+          "min_refinement_level": 5,
+          "max_refinement_level": 8,
+          "datasource_id": "zarr_hytruck"
+        }
+      }
+    },
+    "3": {
+      "suitability_hytruck_parquet_local": {
+        "title": "Suitability Modelling for Hytruck in parquet format",
+        "description": "Desc",
+        "collection_provider": {
+          "providerId": "parquet",
+          "dggrsId": "igeo7",
+          "min_refinement_level": 6,
+          "max_refinement_level": 8,
+          "datasource_id": "hytruck_local"
+        }
+      }
+    },
+    "4": {
+      "crim_testing": {
+        "title": "crim multi parquet files testing",
+        "description": "Desc",
+        "collection_provider": {
+          "providerId": "parquet",
+          "dggrsId": "igeo7",
+          "min_refinement_level": 5,
+          "max_refinement_level": 5,
+          "datasource_id": "crim_testing"
+        }
+      }
+    }
+  },
+  "dggrs": {
+    "1": {
+      "igeo7": {
+        "title": "ISEA7H z7string",
+        "description": "desc",
+        "crs": "wgs84",
+        "shapeType": "hexagon",
+        "definition_link": "http://testing",
+        "defaultDepth": 5,
+        "classname": "igeo7_dggrs_provider.IGEO7Provider"
+      }
+    },
+    "2": {
+      "h3": {
+        "title": "h3",
+        "description": "desc",
+        "crs": "wgs84",
+        "shapeType": "hexagon",
+        "definition_link": "http://h3test",
+        "defaultDepth": 5,
+        "classname": "h3_dggrs_provider.H3Provider"
+      }
+    }
+  },
+  "collection_providers": {
+    "1": {
+      "clickhouse": {
+        "classname": "clickhouse_collection_provider.ClickhouseCollectionProvider",
+        "datasources": {
+        	"connection": {
+        		"host": "127.0.0.1",
+          		"user": "default",
+			"password": "user",
+          		"port": 9000,
+          		"database": "DevelopmentTesting"
+        	},
+        	"hytruck_clickhouse": {
+            	"table": "testing_suitability_IGEO7",
+            	"zone_groups": {
+					      "9": "res_9_id",
+					      "8": "res_8_id",
+					      "7": "res_7_id",
+					      "6": "res_6_id",
+					      "5": "res_5_id"
+					    },
+				"data_cols": [
+			      			"modelled_fuel_stations",
+			      			"modelled_seashore",
+			      			"modelled_solar_wind",
+			      			"modelled_urban_nodes",
+			      			"modelled_water_bodies",
+			      			"modelled_gas_pipelines",
+			      			"modelled_hydrogen_pipelines",
+			      			"modelled_corridor_points",
+			      			"modelled_powerlines",
+			      			"modelled_transport_nodes",
+			      			"modelled_residential_areas",
+			     			"modelled_rest_areas",
+			      			"modelled_slope"
+			    		]
+         	}
+        }
+        }
+    },
+    "2": {
+      "zarr": {
+        "classname": "zarr_collection_provider.ZarrCollectionProvider",
+          "datasources": {
+            "zarr_hytruck": {
+              	"filepath": "~/Geoinformatics/Gitlab/my_local_test/pydggs_testing_dataset/hytruck_zarr_tree.zarr",
+              	"zone_groups":{ 
+                	"5": "res5",
+                	"6": "res6",
+                	"7": "res7",
+                	"8": "res8"
+              		}
+            	}
+        }
+      }
+    },
+    "3": {
+      "parquet": {
+        "classname": "parquet_collection_provider.ParquetCollectionProvider",
+        "datasources": {
+          "hytruck_local": {
+              "filepath": "~/Geoinformatics/Gitlab/my_local_test/pydggs_testing_dataset/live_suitability_suitability_igeo7_4-10.parquet",
+			  "id_col": "cell_ids",
+			  "data_cols": ["modelled_fuel_stations_band_1", "modelled_gas_pipelines_band_1","modelled_hydrogen_pipelines_band_1"],
+			  "exclude_data_cols": ["modelled_fuel_stations_band_1"]
+	      },
+          "hytruck_gcs": {
+              "filepath": "gcs://hytruck/live/suitability/suitability_igeo7_4-10.parquet",
+	     	  "id_col": "cell_ids"
+          },
+          "crim_testing": {
+              "filepath": "~/Geoinformatics/Gitlab/my_local_test/pydggs_testing_dataset/crim_test_dataset/**/*.parquet",
+	     	  "id_col": "dggrid_ISEA7H",
+			  "exclude_data_cols": ["geometry"],
+			  "datetime_col": "datetime"
+          }
+        }
+     }
+    }
+  }
+}

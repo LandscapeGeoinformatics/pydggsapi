@@ -3,7 +3,7 @@
 # that means this module export a FastAPI router that gets mounted
 # in the main api.py under /dggs-api/v1-pre
 
-from fastapi import APIRouter, HTTPException, Depends, Request, Path
+from fastapi import APIRouter, HTTPException, Depends, Request, Path, Query
 from typing import Annotated, Optional, Dict, Union
 
 from pydggsapi.schemas.ogc_dggs.dggrs_list import DggrsListResponse
@@ -15,6 +15,9 @@ from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import LandingPageResponse, 
 from pydggsapi.schemas.api.collections import Collection
 from pydggsapi.schemas.ogc_collections.collections import CollectionDesc as ogc_CollectionDesc
 from pydggsapi.schemas.ogc_collections.collections import Collections as ogc_Collections
+from pydggsapi.schemas.ogc_collections.collections import CollectionDesc
+from pydggsapi.schemas.ogc_collections.queryables import CollectionQueryables
+from pydggsapi.schemas.ogc_collections.queryables import Properties as QueryablesProperties
 
 
 from pydggsapi.models.ogc_dggs.core import query_support_dggs, query_dggrs_definition, query_zone_info, landingpage
@@ -45,7 +48,7 @@ dggrs, dggrs_providers, collections, collection_providers = {}, {}, {}, {}
 
 def _import_dggrs_class(dggrsId):
     try:
-        classname = get_dggrs_class(dggrsId)
+        classname, initial_params = get_dggrs_class(dggrsId)
         if (classname is None):
             logger.error(f'{__name__} {dggrsId} class not found.')
             raise Exception(f'{__name__} {dggrsId} class not found.')
@@ -55,7 +58,7 @@ def _import_dggrs_class(dggrsId):
     try:
         module, classname = classname.split('.') if (len(classname.split('.')) == 2) else (classname, classname)
         cls_ = getattr(importlib.import_module(f'pydggsapi.dependencies.dggrs_providers.{module}'), classname)
-        return cls_()
+        return cls_(**initial_params)
     except Exception as e:
         logger.error(f'{__name__} {dggrsId} class: {classname} not imported, {e}')
         raise Exception(f'{__name__} {dggrsId} class: {classname} not imported, {e}')
@@ -237,6 +240,24 @@ async def list_collection_by_id(collectionId: str, req: Request, response_model=
         raise HTTPException(status_code=404, detail=f'{__name__} {collectionId} not found')
 
 
+@router.get("/collections/{collectionId}/queryables", tags=['ogc-dggs-api'])
+async def get_collection_queryables(req: Request, collection: Dict[str, Collection] = Depends(_get_collection),
+                                    response_model=CollectionQueryables):
+    _, collection = collection.popitem()
+    if (collection is None):
+        # Error, should not be None, it should be handled by _get_collection
+        raise HTTPException(status_code=404, detail=f'{__name__} collection is None')
+
+    collection_provider = _get_collection_provider(collection.collection_provider.providerId)
+    _, collection_provider = collection_provider.popitem()
+    if (collection_provider is None):
+        # Error, should not be None, it should be handled by _get_collection_provider
+        raise HTTPException(status_code=404, detail=f'{__name__} {collection.collection_provider.providerId} not found')
+    fields = collection_provider.get_datadictionary(collection.collection_provider.datasource_id).data
+    items = [QueryablesProperties(id=k, type=v) for k, v in fields.items()]
+    return CollectionQueryables(queryables=items)
+
+
 @router.get("/conformance", tags=['ogc-dggs-api'])
 async def conformance(conformance_classes=Depends(get_conformance_classes)):
     return JSONResponse(content={'conformsTo': conformance_classes})
@@ -327,21 +348,28 @@ async def list_dggrs_zones(req: Request, zonesReq: Annotated[ZonesRequest, Depen
     limit = zonesReq.limit if (zonesReq.limit is not None) else 100000
     parent_zone = zonesReq.parent_zone
     bbox = zonesReq.bbox
+    include_datetime = True if (zonesReq.datetime is not None) else False
+    filter = zonesReq.filter
     # Parameters checking
     if (parent_zone is not None):
         parent_level = dggrs_provider.get_cells_zone_level([parent_zone])[0]
         if (parent_level > zone_level):
             logger.error(f'{__name__} query zones list, parent level({parent_level}) > zone level({zone_level})')
             raise HTTPException(status_code=400, detail=f"query zones list, parent level({parent_level}) > zone level({zone_level})")
+    skip_collection = []
     for k, v in collection.items():
         max_ = v.collection_provider.max_refinement_level
+        min_ = v.collection_provider.min_refinement_level
         # if the dggrsId is not the primary dggrs supported by the collection.
         if (zonesReq.dggrsId != v.collection_provider.dggrsId
                 and zonesReq.dggrsId in dggrs_provider.dggrs_conversion):
             max_ = v.collection_provider.max_refinement_level + dggrs_provider.dggrs_conversion[v.collection_provider.dggrsId].zonelevel_offset
-        if (zone_level > max_):
-            logger.error(f'{__name__} query zones list, zone level {zone_level} > {max_}')
-            raise HTTPException(status_code=400, detail=f"{__name__} query zones list, zone level {zone_level} > {max_}")
+        if (zone_level > max_ or zone_level < min_):
+            logger.warning(f'{__name__} query zones list, zone level {zone_level} is not within the collection\'s refinement level: {min_} {max_}')
+            skip_collection.append(k)
+    [collection.pop(k) for k in skip_collection]
+    if (len(collections) == 0):
+        raise HTTPException(status_code=400, detail=f"f'{__name__} query zones list, zone level {zone_level} is over refinement for all collections")
     if (bbox is not None):
         try:
             bbox = box(*bbox)
@@ -356,7 +384,7 @@ async def list_dggrs_zones(req: Request, zonesReq: Annotated[ZonesRequest, Depen
             raise HTTPException(status_code=400, detail=f"{__name__} query zones list, bbox converstion failed : {e}")
     try:
         result = query_zones_list(bbox, zone_level, limit, dggrs_description, dggrs_provider, collection, collection_provider,
-                                  compact_zone, zonesReq.parent_zone, returntype, returngeometry)
+                                  compact_zone, zonesReq.parent_zone, returntype, returngeometry, filter, include_datetime)
         if (result is None):
             return Response(status_code=204)
         return result
@@ -372,15 +400,21 @@ async def list_dggrs_zones(req: Request, zonesReq: Annotated[ZonesRequest, Depen
 
 @router.get("/dggs/{dggrsId}/zones/{zoneId}/data", response_model=None, tags=['ogc-dggs-api'])
 @router.get("/collections/{collectionId}/dggs/{dggrsId}/zones/{zoneId}/data", response_model=None, tags=['ogc-dggs-api'])
-async def dggrs_zones_data(req: Request, zonedataReq: ZonesDataRequest = Depends(),
+async def dggrs_zones_data(req: Request,
+                           zonedataReq: Annotated[ZoneInfoRequest, Path()],
+                           zonedataQuery: Annotated[ZonesDataRequest, Query()],
                            dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
                            dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
                            collection: Dict[str, Collection] = Depends(_get_collection),
                            collection_provider: Dict[str, AbstractCollectionProvider] = Depends(_get_collection_provider)) -> ZonesDataDggsJsonResponse | FileResponse:
     returntype = _get_return_type(req, support_returntype, 'application/json')
     zoneId = zonedataReq.zoneId
-    depth = zonedataReq.depth if (zonedataReq.depth is not None) else [dggrs_description.defaultDepth]
-    returngeometry = zonedataReq.geometry if (zonedataReq.geometry is not None) else 'zone-region'
+    depth = zonedataQuery.zone_depth if (zonedataQuery.zone_depth is not None) else [dggrs_description.defaultDepth]
+    returngeometry = zonedataQuery.geometry if (zonedataQuery.geometry is not None) else 'zone-region'
+    filter = zonedataQuery.filter
+    include_datetime = True if (zonedataQuery.datetime is not None) else False
+    include_properties = zonedataQuery.properties
+    exclude_properties = zonedataQuery.exclude_properties
     # prepare zone levels from zoneId + depth
     # The first element of zone_level will be the zoneId's level, follow by the required relative depth (zoneId's level + d)
     try:
@@ -388,9 +422,8 @@ async def dggrs_zones_data(req: Request, zonedataReq: ZonesDataRequest = Depends
     except Exception as e:
         logger.error(f'{__name__} query zone data {zonedataReq.dggrsId}, zone id {zoneId} get zone level error: {e}')
         raise HTTPException(status_code=500, detail=f'{__name__} query zone data {zonedataReq.dggrsId}, zone id {zoneId} get zone level error: {e}')
-    if (len(depth) == 2):
-        depth = list(range(depth[0], depth[1] + 1))
     relative_levels = [base_level + d for d in depth]
+    skip_collection = []
     for k, v in collection.items():
         max_ = v.collection_provider.max_refinement_level
         # if the dggrsId is not the primary dggrs supported by the collection.
@@ -399,12 +432,16 @@ async def dggrs_zones_data(req: Request, zonedataReq: ZonesDataRequest = Depends
             max_ = v.collection_provider.max_refinement_level + dggrs_provider.dggrs_conversion[v.collection_provider.dggrsId].zonelevel_offset
         for z in relative_levels:
             if (z > max_):
-                logger.error(f'{__name__} query zone data {zonedataReq.dggrsId}, zone id {zoneId} with relative depth: {z} not supported')
-                raise HTTPException(status_code=400,
-                                    detail=f"query zone data {zonedataReq.dggrsId}, zone id {zoneId} with relative depth: {z} not supported")
+                skip_collection.append(k)
+                logger.warning(f'{__name__} query zone data {zonedataReq.dggrsId}, zone id {zoneId} with relative depth: {z} not supported')
+    [collection.pop(k) for k in skip_collection]
+    if (len(collections) == 0):
+        raise HTTPException(status_code=400,
+                            detail=f"f'{__name__} zone id {zoneId} with relative depth: {depth} is over refinement for all collections")
     try:
         result = query_zone_data(zoneId, base_level, relative_levels, dggrs_description,
-                                 dggrs_provider, collection, collection_providers, returntype, returngeometry)
+                                 dggrs_provider, collection, collection_providers, returntype,
+                                 returngeometry, filter, include_datetime, include_properties, exclude_properties)
         if (result is None):
             return Response(status_code=204)
         return result

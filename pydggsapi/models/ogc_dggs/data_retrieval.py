@@ -7,28 +7,41 @@ from pydggsapi.schemas.api.collection_providers import CollectionProviderGetData
 
 
 from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import AbstractDGGRSProvider
-from pydggsapi.dependencies.collections_providers.abstract_collection_provider import AbstractCollectionProvider
+from pydggsapi.dependencies.collections_providers.abstract_collection_provider import AbstractCollectionProvider, DatetimeNotDefinedError
+from pydggsapi.dependencies.api.utils import getCQLAttributes
 
 from fastapi.responses import FileResponse
 from urllib import parse
 from numcodecs import Blosc
-from typing import List, Dict
+from typing import List, Dict, Optional, Union
 from scipy.stats import mode
+from pygeofilter.ast import AstType
 import shapely
 import tempfile
 import numpy as np
 import zarr
 import geopandas as gpd
 import pandas as pd
-import itertools
 import json
 import logging
 
 logger = logging.getLogger()
 
-def query_zone_data(zoneId: str | int, base_level: int, relative_levels: List[int], dggrs_desc: DggrsDescription, dggrs_provider: AbstractDGGRSProvider,
-                    collection: Dict[str, Collection], collection_provider: List[AbstractCollectionProvider],
-                    returntype='application/dggs-json', returngeometry='zone-region'):
+def query_zone_data(
+    zoneId: str | int,
+    base_level: int,
+    relative_levels: List[int],
+    dggrs_desc: DggrsDescription,
+    dggrs_provider: AbstractDGGRSProvider,
+    collection: Dict[str, Collection],
+    collection_provider: List[AbstractCollectionProvider],
+    returntype='application/dggs-json',
+    returngeometry='zone-region',
+    cql_filter: AstType = None,
+    include_datetime: bool = False,
+    include_properties: Optional[List[str]] = None,
+    exclude_properties: Optional[List[str]] = None,
+) -> Optional[Union[ZonesDataDggsJsonResponse, ZonesDataGeoJson, FileResponse]]:
     logger.debug(f'{__name__} query zone data {dggrs_desc.id}, zone id: {zoneId}, relative_levels: {relative_levels}, return: {returntype}, geometry: {returngeometry}')
     # generate cell ids, geometry for relative_depth, if the first element of relative_levels equal to base_level
     # skip it, add it manually
@@ -43,14 +56,31 @@ def query_zone_data(zoneId: str | int, base_level: int, relative_levels: List[in
     data = {}
     data_type = {}
     data_col_dims = {}
-    from pydggsapi.routers.dggs_api import dggrs_providers as dggrs_pool
+    cql_attributes = set() if (cql_filter is None) else getCQLAttributes(cql_filter)
+    skipped = 0
     for cid, c in collection.items():
         logger.debug(f"{__name__} handling {cid}")
-        convert = True if (c.collection_provider.dggrsId != dggrs_desc.id and
-                           c.collection_provider.dggrsId in dggrs_provider.dggrs_conversion) else False
         cp = collection_provider[c.collection_provider.providerId]
         datasource_id = c.collection_provider.datasource_id
         cmin_rf = c.collection_provider.min_refinement_level
+        datasource_vars = list(cp.get_datadictionary(datasource_id).data.keys())
+        intersection = (set(datasource_vars) & cql_attributes)
+        # check if the cql attributes contain inside the datasource
+        # The datasource of the collection must consist all columns that match with the attributes of the cql filter
+        if ((len(cql_attributes) > 0)):
+            if ((len(intersection) == 0) or (len(intersection) != len(cql_attributes))):
+                skipped += 1
+                continue
+        convert = True if (c.collection_provider.dggrsId != dggrs_desc.id and
+                           c.collection_provider.dggrsId in dggrs_provider.dggrs_conversion) else False
+
+        # Prepare properties inclusion/exclusion taking into account that the names seen from API responses are
+        # prefixed by collection ID for multi-collection aggregation. Drop the prefixed collection ID to compare
+        # against the actual data, while ignoring properties not addressing that specific collection.
+        # These are passed as is afterwards since CQL2 could use different filters than properties to preserve/omit.
+        incl_props = [prop.split(".", 1)[-1] for prop in (include_properties or []) if prop.startswith(f"{cid}.")]
+        excl_props = [prop.split(".", 1)[-1] for prop in (exclude_properties or []) if prop.startswith(f"{cid}.")]
+
         # get data for all relative_levels for the currnet datasource
         for z, v in result.relative_zonelevels.items():
             g = [shapely.from_geojson(json.dumps(g.__dict__))for g in v.geometry]
@@ -58,18 +88,6 @@ def query_zone_data(zoneId: str | int, base_level: int, relative_levels: List[in
             if (convert):
                 # convert the source dggrs ID to the datasource dggrs zoneID
                 converted = dggrs_provider.convert(v.zoneIds, c.collection_provider.dggrsId)
-                #if (converted.target_res[0] < cmin_rf):
-                #    pass
-                #    czone_level = converted.target_res[0]
-                    # we need to use the collection's dggrs provider
-                #    cdggrs_provider = dggrs_pool[c.collection_provider.dggrsId]
-                #    czone_ids_min_rf = [cdggrs_provider.get_relative_zonelevels(tz, czone_level, [cmin_rf], "zone-centroid").relative_zonelevels[cmin_rf].zoneIds
-                #                        for tz in convert.target_zoneIds]
-                    # map the source zone ID to the coarsest level zone ID of the datasource
-                    # the source zone ID need to expand to match with the number of coarsest level zone ID
-                #    vid = [[converted.zoneIds[i]] * len(c) for i, c in enumerate(czone_ids_min_rf)]
-                #    converted.target_zoneIds = list(itertools.chain.from_iterable(czone_ids_min_rf))
-                #    converted.zoneIds = list(itertools.chain.from_iterable(vid))
                 tmp = gpd.GeoDataFrame({'vid': v.zoneIds}, geometry=g).set_index('vid')
                 # Store the mapping in master pd
                 master = pd.DataFrame({'vid': converted.zoneIds, 'zoneId': converted.target_zoneIds}).set_index('vid')
@@ -78,22 +96,16 @@ def query_zone_data(zoneId: str | int, base_level: int, relative_levels: List[in
             else:
                 cf_zoneIds = v.zoneIds
                 master = gpd.GeoDataFrame(cf_zoneIds, geometry=g, columns=['zoneId']).set_index('zoneId')
-                #if (z < cmin_rf):
-                #    vid = [dggrs_provider.get_relative_zonelevels(vzid, z, [cmin_rf], "zone-centroid").relative_zonelevels[cmin_rf].zoneIds
-                #           for vzid in v.zoneIds]
-                #    g = [[g[i]] * len(e) for i, e in enumerate(vid)]
-                #    orgid = [[v.zoneIds[i]] * len(e) for i, e in enumerate(vid)]
-                #    g = list(itertools.chain.from_iterable(g))
-                #    cf_zoneIds = list(itertools.chain.from_iterable(vid))
-                #    orgid = list(itertools.chain.from_iterable(orgid))
-                #    z = cmin_rf
-                #    master = gpd.GeoDataFrame({'vid': orgid, 'zoneId': cf_zoneIds}, geometry=g).set_index('zoneId')
-                #else:
             idx = master.index.values.tolist()
             logger.debug(f"{__name__} {cid} get_data")
             collection_result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
             if (converted_z >= cmin_rf):
-                collection_result = cp.get_data(idx, converted_z, datasource_id)
+                try:
+                    collection_result = cp.get_data(
+                        idx, converted_z, datasource_id, cql_filter, include_datetime, incl_props, excl_props
+                    )
+                except DatetimeNotDefinedError:
+                    pass
             logger.debug(f"{__name__} {cid} get_data done")
             if (len(collection_result.zoneIds) > 0):
                 cols_name = {f'{cid}.{k}': v for k, v in collection_result.cols_meta.items()}
@@ -119,6 +131,9 @@ def query_zone_data(zoneId: str | int, base_level: int, relative_levels: List[in
                     data[z] = master
                 if 'dimensions' in collection_result.cols_meta:
                     data_col_dims.update(collection_result.cols_meta['dimensions'])
+                if include_datetime:
+                    data_col_dims.update()
+                sub_zones = len(idx)
     if (len(data.keys()) == 0):
         return None
     zarr_root, tmpfile = None, None
@@ -145,8 +160,10 @@ def query_zone_data(zoneId: str | int, base_level: int, relative_levels: List[in
         else:
             zoneIds = d.index.values.astype(str).tolist()
             d = d.T
-            d[d.isna()] = float('nan')
+            nan_mask = d.isna()
             v = d.values
+            if v[nan_mask].size > 0:
+                v[nan_mask] = np.nan
             diff = set(list(d.index)) - set(list(properties.keys()))
             properties.update({c: Property(**{'type': data_type[c]}) for c in diff})
             diff = set(list(d.index)) - set(list(values.keys()))

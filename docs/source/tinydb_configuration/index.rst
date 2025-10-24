@@ -20,6 +20,10 @@ Generally, users mostly work with the ``collections`` table to publish collectio
 Developers implementing new DGGRS and collection providers must register them in the tables ``dggrs`` or ``collections_providers`` with a unique ID such that they can be referenced in the collections table. 
 
 
+.. literalinclude:: ../../../dggs_api_config_example.json
+   :language: json
+   :caption: Example of dggs_api_config.yaml
+
 .. _collections:
 
 collections

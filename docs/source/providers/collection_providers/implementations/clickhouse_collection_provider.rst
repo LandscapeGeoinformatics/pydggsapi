@@ -3,7 +3,8 @@ Clickhouse Collection Provider
 The implementation uses `clickhouse_drive <https://clickhouse-driver.readthedocs.io/en/latest/>`_  to connect to Clickhouse DB. The provider serves multiple tables on the same database, with each table as a data source. It creates an instance of ``clickhouse_diver::Client`` at initialisation and assigns it to ``self.db``. The reference is used in ``get_data`` for data queries. 
 
 ClickhouseDatasourceInfo
-==============================
+------------------------
+
 - ``table``: A string to indicate the table for query
 - ``aggregation``: A string to indicate which aggregation should use. Currently only for `mode`.
 

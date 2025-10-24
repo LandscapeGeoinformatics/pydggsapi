@@ -36,59 +36,61 @@ class CollectionDesc(CommonBaseModel):
     id: str = Field(
         ...,
         description='identifier of the collection used, for example, in URIs',
-        example='dem',
+        examples=['dem'],
     )
     title: Annotated[Optional[str], OmitIfNone] = Field(
         None,
         description='human readable title of the collection',
-        example='Digital Elevation Model',
+        examples=['Digital Elevation Model'],
     )
     description: Annotated[Optional[str], OmitIfNone] = Field(
         None,
         description='a description of the data in the collection',
-        example='A Digital Elevation Model.',
+        examples=['A Digital Elevation Model.'],
     )
     attribution: Annotated[Optional[str], OmitIfNone] = Field(None, title='attribution for the collection')
     links: List[Link] = Field(
         lambda: [],
-        example=[
-            {
-                'href': 'http://data.example.org/collections/dem?f=json',
-                'rel': 'self',
-                'type': 'application/json',
-                'title': 'Digital Elevation Model',
-            },
-            {
-                'href': 'http://data.example.org/collections/dem?f=html',
-                'rel': 'alternate',
-                'type': 'application/json',
-                'title': 'Digital Elevation Model',
-            },
-            {
-                'href': 'http://data.example.org/collections/dem/coverage',
-                'rel': 'coverage',
-                'type': 'image/tiff; application=geotiff',
-                'title': 'Digital Elevation Model',
-            },
-            {
-                'href': 'http://data.example.org/collections/dem/coverage/domainset',
-                'rel': 'domainset',
-                'type': 'application/json',
-                'title': 'Digital Elevation Model',
-            },
-            {
-                'href': 'http://data.example.org/collections/dem/coverage/rangetype',
-                'rel': 'rangetype',
-                'type': 'application/json',
-                'title': 'Digital Elevation Model',
-            },
-            {
-                'href': 'http://data.example.org/collections/dem/coverage/metadata',
-                'rel': 'metadata',
-                'type': 'application/json',
-                'title': 'Digital Elevation Model',
-            },
-        ],
+        examples=[
+            [
+                {
+                    'href': 'http://data.example.org/collections/dem?f=json',
+                    'rel': 'self',
+                    'type': 'application/json',
+                    'title': 'Digital Elevation Model',
+                },
+                {
+                    'href': 'http://data.example.org/collections/dem?f=html',
+                    'rel': 'alternate',
+                    'type': 'application/json',
+                    'title': 'Digital Elevation Model',
+                },
+                {
+                    'href': 'http://data.example.org/collections/dem/coverage',
+                    'rel': 'coverage',
+                    'type': 'image/tiff; application=geotiff',
+                    'title': 'Digital Elevation Model',
+                },
+                {
+                    'href': 'http://data.example.org/collections/dem/coverage/domainset',
+                    'rel': 'domainset',
+                    'type': 'application/json',
+                    'title': 'Digital Elevation Model',
+                },
+                {
+                    'href': 'http://data.example.org/collections/dem/coverage/rangetype',
+                    'rel': 'rangetype',
+                    'type': 'application/json',
+                    'title': 'Digital Elevation Model',
+                },
+                {
+                    'href': 'http://data.example.org/collections/dem/coverage/metadata',
+                    'rel': 'metadata',
+                    'type': 'application/json',
+                    'title': 'Digital Elevation Model',
+                },
+            ],
+        ]
     )
     extent: Annotated[Optional[Extent], OmitIfNone] = None
     itemType: Annotated[Optional[str], OmitIfNone] = Field(
@@ -96,9 +98,9 @@ class CollectionDesc(CommonBaseModel):
         description='indicator about the type of the items in the collection if the collection has an accessible /collections/{collectionId}/items endpoint',
     )
     crs: Annotated[Optional[str], OmitIfNone] = Field(
-        ['http://www.opengis.net/def/crs/OGC/1.3/CRS84'],
+        'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
         description='the list of coordinate reference systems supported by the API; the first item is the default coordinate reference system',
-        example=[
+        examples=[
             'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
             'http://www.opengis.net/def/crs/EPSG/0/4326',
         ],
@@ -106,7 +108,7 @@ class CollectionDesc(CommonBaseModel):
     storageCrs: Annotated[Optional[str], OmitIfNone] = Field(
         'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
         description='the native coordinate reference system (i.e., the most efficient CRS in which to request the data, possibly how the data is stored on the server); this is the default output coordinate reference system for Maps and Coverages',
-        example='http://www.opengis.net/def/crs/OGC/1.3/CRS84',
+        examples=['http://www.opengis.net/def/crs/OGC/1.3/CRS84'],
     )
     dataType: Annotated[Optional[DataType], OmitIfNone] = None
     geometryDimension: Annotated[Optional[conint(ge=0, le=3)], OmitIfNone] = Field(
@@ -132,4 +134,3 @@ class Collections(BaseModel):
     #numberMatched: Optional[NumberMatched] = None
     #numberReturned: Optional[NumberReturned] = None
     collections: List[CollectionDesc]
-

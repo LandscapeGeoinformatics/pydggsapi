@@ -8,7 +8,7 @@ Each group of the Zarr data source represents data from the same refinement leve
 |zarr_data_example|
 
 ZarrDatasourceInfo
-==================
+------------------
 
 - ``filepath`` : String. A file path of the data source. Supports both local, gcs and s3 cloud storage.
 - ``id_col``: String. The column name of the zone IDs, default is "".

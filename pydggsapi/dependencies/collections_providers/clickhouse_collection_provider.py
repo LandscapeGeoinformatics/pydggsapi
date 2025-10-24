@@ -1,8 +1,14 @@
 from pydggsapi.dependencies.collections_providers.abstract_collection_provider import (
     AbstractCollectionProvider,
-    AbstractDatasourceInfo
+    AbstractDatasourceInfo,
+    DatetimeNotDefinedError
 )
 from pydggsapi.schemas.api.collection_providers import CollectionProviderGetDataReturn, CollectionProviderGetDataDictReturn
+from pydggsapi.schemas.ogc_dggs.dggrs_zones import zone_datetime_placeholder
+
+from pygeofilter.ast import AstType
+from pygeofilter.ast import Attribute as pygeofilter_ats
+from pygeofilter.backends.sql import to_sql_where
 from dataclasses import dataclass
 from clickhouse_driver import Client
 from typing import List
@@ -42,7 +48,10 @@ class ClickhouseCollectionProvider(AbstractCollectionProvider):
             logger.error(f'{__name__} create datasource failed: {e}')
             raise Exception(f'{__name__} create datasource failed: {e}')
 
-    def get_data(self, zoneIds: List[str], res: int, datasource_id: str) -> CollectionProviderGetDataReturn:
+    def get_data(self, zoneIds: List[str], res: int, datasource_id: str,
+                 cql_filter: AstType = None, include_datetime: bool = False,
+                 include_properties: List[str] = None,
+                 exclude_properties: List[str] = None) -> CollectionProviderGetDataReturn:
         result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
         try:
             datasource = self.datasources[datasource_id]
@@ -54,11 +63,26 @@ class ClickhouseCollectionProvider(AbstractCollectionProvider):
         except KeyError as e:
             logger.error(f'{__name__} get zone_groups for resolution {res} failed: {e}')
             return result
+        incl_cols = datasource.data_cols
+        if include_properties:
+            incl_cols &= set(include_properties)
+        if exclude_properties:
+            incl_cols -= set(exclude_properties)
         if (datasource.aggregation == 'mode'):
-            cols = [f'arrayMax(topK(1)({c})) as {c}' for c in datasource.data_cols]
+            cols = [f'arrayMax(topK(1)({c})) as {c}' for c in incl_cols]
             cols = ",".join(cols)
         cols += f', {res_col}'
+        # cql handling
         query = f'select {cols} from {datasource.table} where {res_col} in (%(cellid_list)s) group by {res_col}'
+        if (cql_filter is not None):
+            fieldmapping = self.get_datadictionary(datasource_id).data
+            fieldmapping = {k: k for k, v in fieldmapping.items()}
+            if (include_datetime and datasource.datetime_col is None):
+                raise DatetimeNotDefinedError(f"{__name__} filter by datetime is not supported: datetime_col is none")
+            if (include_datetime):
+                fieldmapping.update({zone_datetime_placeholder: datasource.datetime_col})
+            cql_sql = to_sql_where(cql_filter, fieldmapping).replace('"', "")
+            query += f' having {cql_sql}'
         try:
             db_result = self.db.execute(query, {'cellid_list': zoneIds}, with_column_types=True)
         except Exception as e:
@@ -87,10 +111,3 @@ class ClickhouseCollectionProvider(AbstractCollectionProvider):
             raise Exception(f'{__name__} datasource_id not found: {datasource_id}')
         data = {r[0]: r[1] for r in db_result if (r[0] in datasource.data_cols)}
         return CollectionProviderGetDataDictReturn(data=data)
-
-
-
-
-
-
-

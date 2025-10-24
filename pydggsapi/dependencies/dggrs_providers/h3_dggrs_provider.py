@@ -120,13 +120,13 @@ class H3Provider(AbstractDGGRSProvider):
             geometry = [self._cell_to_shapely(z, returngeometry) for z in compactIds]
             hex_gdf = gpd.GeoDataFrame({'zoneIds': compactIds}, geometry=geometry, crs='wgs84').set_index('zoneIds')
             logger.info(f'{__name__} query zones list, compact : {len(hex_gdf)}')
-        returnedAreaMetersSquare = [h3.cell_area(z, 'm^2') for z in hex_gdf.index.values]
+        area = [h3.cell_area(z, 'm^2') for z in hex_gdf.index.values]
         geotype = GeoJSONPolygon if (returngeometry == 'zone-region') else GeoJSONPoint
         geometry = [geotype(**eval(shapely.to_geojson(g))) for g in hex_gdf['geometry'].values.tolist()]
         hex_gdf.reset_index(inplace=True)
         return DGGRSProviderZonesListReturn(**{'zones': hex_gdf['zoneIds'].values.astype(str).tolist(),
                                                'geometry': geometry,
-                                               'returnedAreaMetersSquare': returnedAreaMetersSquare})
+                                               'returnedAreaMetersSquare': area})
 
     def zonesinfo(self, cellIds: list) -> DGGRSProviderZoneInfoReturn:
         centroid = []

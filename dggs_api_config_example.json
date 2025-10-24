@@ -15,19 +15,6 @@
       }
     },
     "2": {
-      "suitability_hytruck_zarr": {
-        "title": "Suitability Modelling for Hytruck in Zarr format",
-        "description": "Desc",
-        "collection_provider": {
-          "providerId": "zarr",
-          "dggrsId": "igeo7",
-          "min_refinement_level": 5,
-          "max_refinement_level": 8,
-          "datasource_id": "zarr_hytruck"
-        }
-      }
-    },
-    "3": {
       "suitability_hytruck_parquet": {
         "title": "Suitability Modelling for Hytruck in parquet format",
         "description": "Desc",
@@ -86,9 +73,9 @@
 				  "6": "column of refinement level 6",
 				  "5": "column of refinement level 5"
 				},
-				"data_cols": [
-				  "data column names"
-				]
+				"exclude_data_cols": ["list of column names excluded from the query"],
+				"data_cols": [ "list of column names"],
+			    "datetime_col": "column_name_of_datetime"
 			}
       }
     },
@@ -114,7 +101,8 @@
             "hytruck": {
               "filepath": "<local file path or path of a cloud bucket>",
 			  "id_col": "cell_ids",
-			  "data_cols": ["*"]
+			  "data_cols": ["*"],
+			  "datetime_col": "column_name_of_datetime"
             }
           }
         }

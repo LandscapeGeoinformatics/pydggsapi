@@ -190,10 +190,10 @@ class IGEO7Provider(AbstractDGGRSProvider):
             logger.info(f'{__name__} query zones list, compact : {len(hex_gdf)}')
         if (returngeometry != 'zone-region'):
             hex_gdf = self.centroid_from_cellid(hex_gdf['name'].values, zone_level)
-        returnedAreaMetersSquare = [self.data[zone_level]['Area (km^2)'] * 1000000] * len(hex_gdf)
+        area = [self.data[zone_level]['Area (km^2)'] * 1000000] * len(hex_gdf)
         geotype = GeoJSONPolygon if (returngeometry == 'zone-region') else GeoJSONPoint
         geometry = [geotype(**eval(shapely.to_geojson(g))) for g in hex_gdf['geometry'].values.tolist()]
         hex_gdf.reset_index(inplace=True)
         return DGGRSProviderZonesListReturn(**{'zones': hex_gdf['name'].values.astype(str).tolist(),
                                                'geometry': geometry,
-                                               'returnedAreaMetersSquare': returnedAreaMetersSquare})
+                                               'returnedAreaMetersSquare': area})

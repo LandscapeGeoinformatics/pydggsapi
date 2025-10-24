@@ -9,7 +9,9 @@ The attributes of Abstract Datasource Info class are:
 
 - ``data_cols``: a list of column names(in string) used to ``get_data``, default to:  ['*'] , which means all columns.
 - ``exclude_data_cols``: a list of column names(in string) that are excluded from ``get_data``, default to:  [].
+- ``datetime_col``: a string of column name to specify the datetime column of the datasource. default to ``None``.
 - ``zone_groups`` : A dictionary to map the refinement level to the column name that stores the zone IDs.
+
 
 
 
@@ -57,7 +59,17 @@ For example, the ``ParquetDatasourceInfo`` and the ``datasources`` configuration
 Parameters for get_data
 -----------------------
 
-The pydggsapi creates collection provider objects at the beginning, and data sources that share the same provider will use the same object instance. The ``get_data`` function accepts the parameter ``datasource_id`` defined in the :ref:`collections <collections>` setting to retrieve the corresponding data source info class, which is used to perform queries.
+The pydggsapi creates collection provider objects at the beginning, and data sources that share the same provider will use the same object instance. The ``get_data`` function accepts five parameters:
+
+- ``zoneIds``: A list of zone IDs for retrieving the data at specific zones 
+- ``res``: refinement level 
+- ``datasource_id``: defined in each :ref:`collection providers <collection_providers>` to retrieve the corresponding data source info class, which is used to perform queries.
+- ``cql_filter``: a `pygeofilter <https://github.com/geopython/pygeofilter>`_ parser object for CQL2 query handling.
+- ``include_datetime``: a boolean to indicate if the ``cql_filter`` consist of datetime query
+
+Temporal data source:
+
+The implementation should check if the ``datetime_col`` is set inside the  data source info if ``include_datetime`` is True. Then, it should map the ``zone_datetime_placeholder`` (defined inside schemas/ogc_dggs/dggrs_zones.py) to the column name specified by ``datetime_col`` using the fieldmapping from ``pygeofilter``.
 
 
 Parameters for get_datadictionary

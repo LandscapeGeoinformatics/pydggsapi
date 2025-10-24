@@ -5,7 +5,7 @@ The implementation uses `duckdb <https://duckdb.org/>`_ as the driver to access 
 Therefore, multiple cloud providers can be supported by the same parquet providers and different bucket credentials. All data source info are stored as a dictionary in ``self.datasources`` for retrieval. The key of the dictionary represents the ID of the data source. 
 
 ParquetDatasourceInfo
-=====================
+---------------------
 - ``filepath`` : String. A file path of the data source. Supports both local, gcs and s3 cloud storage.
 - ``id_col``: String. The column name of the zone IDs.
 - ``credential``: String that is in the form of `temporary secrets from duckdb <https://duckdb.org/docs/stable/configuration/secrets_manager.html>`_. To specify a custom s3 endpoint, please refer `here <https://duckdb.org/docs/stable/core_extensions/httpfs/s3api.html>`_.

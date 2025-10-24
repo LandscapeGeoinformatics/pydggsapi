@@ -1,12 +1,15 @@
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import Feature
-from pydggsapi.schemas.ogc_dggs.dggrs_zones import ZonesResponse, ZonesGeoJson
+from pydggsapi.schemas.ogc_dggs.dggrs_zones import ZonesResponse, ZonesGeoJson, zone_datetime_placeholder
 from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescription
 from pydggsapi.schemas.api.collections import Collection
 
 
 from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import AbstractDGGRSProvider
-from pydggsapi.dependencies.collections_providers.abstract_collection_provider import AbstractCollectionProvider
+from pydggsapi.dependencies.collections_providers.abstract_collection_provider import AbstractCollectionProvider, DatetimeNotDefinedError
+from pydggsapi.dependencies.api.utils import getCQLAttributes
 
+import numpy as np
+from pygeofilter.ast import AstType
 from typing import Dict
 import numpy as np
 import itertools
@@ -17,49 +20,48 @@ logger = logging.getLogger()
 
 def query_zones_list(bbox, zone_level, limit, dggrs_info: DggrsDescription, dggrs_provider: AbstractDGGRSProvider,
                      collection: Dict[str, Collection], collection_provider: Dict[str, AbstractCollectionProvider],
-                     compact=True, parent_zone=None, returntype='application/json', returngeometry='zone-region'):
+                     compact=True, parent_zone=None, returntype='application/json', returngeometry='zone-region',
+                     cql_filter: AstType = None, include_datetime: bool = False):
     logger.debug(f'{__name__} query zones list: {bbox}, {zone_level}, {limit}, {parent_zone}, {compact}')
     # generate zones for the bbox at the required zone_level
     result = dggrs_provider.zoneslist(bbox, zone_level, parent_zone, returngeometry, compact)
     filter_ = []
-    # we need to import the dict here to avoid import loop.
-    from pydggsapi.routers.dggs_api import dggrs_providers as dggrs_pool
-
+    cql_attributes = set() if (cql_filter is None) else getCQLAttributes(cql_filter)
+    skipped = 0
     for k, v in collection.items():
         converted = None
         converted_zones = result.zones
         converted_level = zone_level
+        datasource_id = v.collection_provider.datasource_id
+        cp_id = v.collection_provider.providerId
+        datasource_vars = list(collection_provider[cp_id].get_datadictionary(datasource_id).data.keys())
+
+        intersection = (set(datasource_vars) & cql_attributes)
+        # check if the cql attributes contain inside the datasource
+        # The datasource of the collection must consist all columns that match with the attributes of the cql filter
+        if ((len(cql_attributes) > 0)):
+            if ((len(intersection) == 0) or (len(intersection) != len(cql_attributes))):
+                skipped += 1
+                continue
         if (v.collection_provider.dggrsId != dggrs_info.id and
                 v.collection_provider.dggrsId in dggrs_provider.dggrs_conversion):
             # perform conversion
             converted = dggrs_provider.convert(result.zones, v.collection_provider.dggrsId)
             converted_zones = converted.target_zoneIds
             converted_level = converted.target_res[0]
-        # if the requried zone_level is coarser than the datasource, use relative_zonelevels
-        # to get the zones at the coarsest refinement level of the datasource.
-        # child_parent_mapping = {z: z for z in converted_zones}
-        # if (converted_level < v.collection_provider.min_refinement_level):
-            # a mapping that helps to filter out which child zones are not inside the dataset
-        #    child_parent_mapping = {}
-        #    for z in converted_zones:
-                # we need to change the calling dggrs_provider to the collection's dggrs for conversion case
-        #        children = dggrs_pool[v.collection_provider.dggrsId].get_relative_zonelevels(z, converted_level,
-        #                                                                                     [v.collection_provider.min_refinement_level], "zone-centroid")
-        #        [child_parent_mapping.update({zid: z})for zid in
-        #         children.relative_zonelevels[v.collection_provider.min_refinement_level].zoneIds]
-        #    converted_zones = list(child_parent_mapping.keys())
-        #    converted_level = v.collection_provider.min_refinement_level
-        if (converted_level >= v.collection_provider.min_refinement_level):
-            filtered_zoneIds = collection_provider[v.collection_provider.providerId].get_data(converted_zones, converted_level,
-                                                                                              v.collection_provider.datasource_id).zoneIds
-        else:
+        try:
+            filtered_zoneIds = collection_provider[cp_id].get_data(converted_zones, converted_level,
+                                                                   datasource_id, cql_filter, include_datetime).zoneIds
+        except DatetimeNotDefinedError:
             filtered_zoneIds = []
-        # filtered_zoneIds = [child_parent_mapping[child] for child in set(child_parent_mapping.keys()) & set(filtered_zoneIds)]
+            pass
         if (converted is not None):
             # If conversion take place, it is a 3 level mapping, from child to parent, from parnet to the original dggrs
             filter_ += np.array(converted.zoneIds)[np.isin(converted.target_zoneIds, filtered_zoneIds)].tolist()
         else:
             filter_ += filtered_zoneIds
+    if (skipped == len(collection)):
+        raise ValueError(f"{__name__} query zones list cql attributes({cql_attributes}) not found in all collections.")
     if (len(filter_) == 0):
         return None
     logger.debug(f'{__name__} query zones list result: {len(filter_)}')
