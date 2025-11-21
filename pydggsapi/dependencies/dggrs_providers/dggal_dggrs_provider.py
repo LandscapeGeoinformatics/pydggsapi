@@ -1,16 +1,22 @@
 # here should be DGGRID related functions and methods
 # DGGRID ISEA7H resolutions
 
-from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import AbstractDGGRSProvider
+from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import AbstractDGGRSProvider, ZoneIdRepresentationType
 from pydggsapi.schemas.common_geojson import GeoJSONPolygon, GeoJSONPoint
-from pydggsapi.schemas.api.dggrs_providers import DGGRSProviderZoneInfoReturn, DGGRSProviderZonesListReturn
-from pydggsapi.schemas.api.dggrs_providers import DGGRSProviderGetRelativeZoneLevelsReturn, DGGRSProviderZonesElement
+from pydggsapi.schemas.api.dggrs_providers import (
+    DGGRSProviderZoneInfoReturn,
+    DGGRSProviderZonesListReturn,
+    DGGRSProviderGetRelativeZoneLevelsReturn,
+    DGGRSProviderConversionReturn,
+    DGGRSProviderZonesElement,
+)
+from pydggsapi.schemas.ogc_dggs.dggrs_zones_data import ZoneGeometryType
 
 import shapely
 import logging
 from dggal import Application, pydggal_setup, CRS, ogc, epsg, GeoExtent, Array, GeoPoint
 from dggal import IVEA7H, ISEA7H_Z7, rHEALPix, HEALPix
-from typing import Union, List
+from typing import Any, List, Union
 
 logger = logging.getLogger()
 supported_grids = {'IVEA7H': IVEA7H,
@@ -39,7 +45,7 @@ def generateZoneGeometry(dggrs, zone, crs=None, centroids: bool = False) -> GeoJ
     else:
         if centroids:
             centroid = dggrs.getZoneCRSCentroid(zone, crs)
-            return GeoJSONPoint(type=Point, coordinates=(centroid.lon.value, centroid.lat.value))
+            return GeoJSONPoint(type="Point", coordinates=(centroid.lon.value, centroid.lat.value))
         else:
             vertices = dggrs.getZoneRefinedCRSVertices(zone, crs, 0)
             coordinates = []
@@ -69,10 +75,11 @@ class DGGALProvider(AbstractDGGRSProvider):
             logger.error(f'{__name__} grid: {self.grid_name} not supported')
             raise Exception(f'{__name__} grid: {self.grid_name} not supported')
 
-    def convert(self, zoneIds: list, targedggrs: type[AbstractDGGRSProvider]):
+    def convert(self, zoneIds: List[str], targedggrs: str,
+                zone_id_repr: ZoneIdRepresentationType = 'textual') -> DGGRSProviderConversionReturn:
         raise NotImplementedError
 
-    def zone_id_from_textual(self, cellIds: list, zone_id_repr: str) -> list:
+    def zone_id_from_textual(self, cellIds: List[str], zone_id_repr: str) -> List[Any]:
         if (len(cellIds) == 0):
             return []
         if (zone_id_repr == "textual"):
@@ -82,7 +89,7 @@ class DGGALProvider(AbstractDGGRSProvider):
         if (zone_id_repr == "hexstring"):
             raise ValueError("{__name__} dggal doesn't support hexstring zone id representation")
 
-    def zone_id_to_textual(self, cellIds: list, zone_id_repr: str) -> list:
+    def zone_id_to_textual(self, cellIds: List[Any], zone_id_repr: str) -> List[str]:
         if (len(cellIds) == 0):
             return []
         if (zone_id_repr == "textual"):
@@ -102,11 +109,12 @@ class DGGALProvider(AbstractDGGRSProvider):
     def get_zone_level_by_cls(self, cls_km: float):
         return self.mygrid.getLevelFromMetersPerSubZone(cls_km * 1000, 0)
 
-    def get_cells_zone_level(self, cellIds: List[str]):
+    def get_cells_zone_level(self, cellIds: List[str]) -> List[int]:
         cellId = self.mygrid.getZoneFromTextID(cellIds[0])
         return [self.mygrid.getZoneLevel(cellId)]
 
-    def get_relative_zonelevels(self, cellId: str, base_level: int, zone_levels: List[int], geometry='zone-region'):
+    def get_relative_zonelevels(self, cellId: str, base_level: int, zone_levels: List[int],
+                                geometry: ZoneGeometryType = 'zone-region') -> DGGRSProviderGetRelativeZoneLevelsReturn:
         children = {}
         geometry = geometry.lower()
         #geojson = GeoJSONPolygon if (geometry == 'zone-region') else GeoJSONPoint
@@ -121,7 +129,7 @@ class DGGALProvider(AbstractDGGRSProvider):
                                                        'geometry': subzones_geometry})
         return DGGRSProviderGetRelativeZoneLevelsReturn(relative_zonelevels=children)
 
-    def zonesinfo(self, cellIds: List[str]):
+    def zonesinfo(self, cellIds: List[str]) -> DGGRSProviderZoneInfoReturn:
         zone_level = self.get_cells_zone_level(cellIds)[0]
         cellIds = [self.mygrid.getZoneFromTextID(cellId) for cellId in cellIds]
         try:
@@ -140,8 +148,8 @@ class DGGALProvider(AbstractDGGRSProvider):
                                               'centroids': centroids, 'geometry': hex_vertices, 'bbox': extents,
                                               'areaMetersSquare': self.mygrid.getRefZoneArea(zone_level)})
 
-    def zoneslist(self, bbox: Union[shapely.box, None], zone_level: int,
-                  parent_zone: Union[str, int, None], returngeometry: str, compact=True):
+    def zoneslist(self, bbox: Union[shapely.box, None], zone_level: int, parent_zone: Union[str, int, None],
+                  returngeometry: ZoneGeometryType, compact: bool = True) -> List[str]:
         if (bbox is not None):
             try:
                 bbox = shapely.bounds(bbox)

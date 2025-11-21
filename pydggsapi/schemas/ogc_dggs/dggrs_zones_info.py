@@ -1,8 +1,9 @@
 from __future__ import annotations
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel, Link
+from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.common_geojson import GeoJSONPolygon, GeoJSONPoint
 from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescriptionRequest
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from pydantic import BaseModel, conint
 
 
@@ -10,7 +11,7 @@ class ZoneInfoRequest(DggrsDescriptionRequest):
     zoneId: str
 
 
-class ZoneInfoResponse(BaseModel):
+class ZoneInfoResponse(CommonBaseModel):
     id: str
     links: List[Link]
     shapeType: Optional[str]
@@ -18,9 +19,9 @@ class ZoneInfoResponse(BaseModel):
     crs: Optional[CrsModel] = None
     centroid: Optional[GeoJSONPoint] = None
     bbox: Optional[List[float]] = None
-    areaMetersSquare: Optional[float] = None
-    volumeMetersCube: Optional[float] = None
-    temporalDurationSeconds: Optional[float] = None
     geometry: Optional[GeoJSONPolygon] = None
-    temporalInterval: Optional[List[str]] = None
+    areaMetersSquare: Annotated[Optional[float], OmitIfNone] = None
+    volumeMetersCube: Annotated[Optional[float], OmitIfNone] = None
+    temporalDurationSeconds: Annotated[Optional[float], OmitIfNone] = None
+    temporalInterval: Annotated[Optional[List[str]], OmitIfNone] = None
     # statistics: Optional[Dict[str, Statistics]]

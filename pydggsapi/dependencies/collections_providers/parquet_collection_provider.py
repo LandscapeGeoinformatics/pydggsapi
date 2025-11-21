@@ -8,10 +8,12 @@ from pydggsapi.schemas.api.collection_providers import (
     CollectionProviderGetDataDictReturn
 )
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import zone_datetime_placeholder
+from pydggsapi.schemas.ogc_dggs.dggrs_zones_data import Dimension, DimensionGrid
 from dataclasses import dataclass
 from pygeofilter.ast import AstType
 from pygeofilter.backends.sql import to_sql_where
 import duckdb
+import pandas as pd
 from typing import List
 import logging
 
@@ -66,6 +68,13 @@ class ParquetCollectionProvider(AbstractCollectionProvider):
             if exclude_properties:
                 incl -= set(exclude_properties)
             cols = f"{','.join(incl)}, {datasource.id_col}"
+
+        # even if 'datetime' was not requested/filtered, it must be reported in dimensions if present for that source
+        if datasource.datetime_col is not None:
+            cols += f", {datasource.datetime_col}"
+
+        # WARNING: 'zone-order' must remain consistent with the original input to respect DGGS definition
+        #   it must NOT be sorted, see Req 24-E (https://docs.ogc.org/DRAFTS/21-038r1.html#_req_data-json_content)
         sql = f"""select {cols} from read_parquet('{datasource.filepath}')
                   where {datasource.id_col} in (SELECT UNNEST(?))"""
         if (cql_filter is not None):
@@ -76,19 +85,55 @@ class ParquetCollectionProvider(AbstractCollectionProvider):
             if (include_datetime):
                 fieldmapping.update({zone_datetime_placeholder: datasource.datetime_col})
             cql_sql = to_sql_where(cql_filter, fieldmapping)
-            sql += f"and {cql_sql}"
+            sql += f" AND {cql_sql}"
         try:
             result_df = datasource.conn.sql(sql, params=[zoneIds]).df()
         except Exception as e:
             logger.error(f'{__name__} {datasource_id} query data error: {e}')
             raise Exception(f'{__name__} {datasource_id} query data error: {e}')
-        result_id = result_df[datasource.id_col]
+
+        # empty result can be skipped entirely
+        if result_df.size == 0:
+            return result
+
+        cols_meta = {k: v.name for k, v in dict(result_df.dtypes).items() if k != datasource.id_col}
+        cols_dims = None
+        zone_dates = None
+
+        # update result with datetime dimension as applicable + zone padding for partial matches
+        if datasource.datetime_col:
+            # pad any missing values to fill the dimension and sort accordingly along the dimensions for 1D output
+            dates = sorted(result_df[datasource.datetime_col].unique())
+            cols = [datasource.id_col, datasource.datetime_col]
+            grid = pd.MultiIndex.from_product([zoneIds, dates], names=cols).to_frame(index=False)
+            result_df = pd.merge(grid, result_df, how='left', on=cols)
+            # define metadata for dggs response
+            cols_dims = [
+                Dimension(
+                    name=datasource.datetime_col,
+                    interval=[dates[0], dates[-1]],
+                    grid=DimensionGrid(
+                        cellsCount=len(dates),
+                        coordinates=dates,
+                    )
+                )
+            ]
+            cols_meta.pop(datasource.datetime_col, None)
+            zone_dates = result_df[datasource.datetime_col].astype(str).to_list()
+            result_df.drop(datasource.datetime_col, axis=1, inplace=True)  # remove since reported as metadata
+
+        # when no datetime requested, missing zones must still be padded for partial match
+        # (notably for zone-depth requests)
+        else:
+            grid = pd.DataFrame({datasource.id_col: zoneIds})
+            result_df = pd.merge(grid, result_df, how='left', on=datasource.id_col)
+
+        result_id = result_df[datasource.id_col].to_list()
         result_df = result_df.drop(datasource.id_col, axis=1)
-        cols_meta = {k: v.name for k, v in dict(result_df.dtypes).items()}
-        result_df = result_df.to_numpy()
-        result_id = result_id.to_list()
-        result_df = result_df.tolist()
+        result_df = result_df.to_numpy().tolist()
         result.zoneIds, result.cols_meta, result.data = result_id, cols_meta, result_df
+        result.datetimes = zone_dates
+        result.dimensions = cols_dims
         return result
 
     def get_datadictionary(self, datasource_id: str) -> CollectionProviderGetDataReturn:

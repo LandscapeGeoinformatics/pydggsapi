@@ -7,7 +7,7 @@ class GeoJSONPoint(BaseModel):
     coordinates: Tuple[float, float]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "type": "Point",
                 "coordinates": [1.0, 1.0]
@@ -20,7 +20,7 @@ class GeoJSONPolygon(BaseModel):
     coordinates: List[List[Tuple[float, float]]]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "type": "Polygon",
                 "coordinates": [

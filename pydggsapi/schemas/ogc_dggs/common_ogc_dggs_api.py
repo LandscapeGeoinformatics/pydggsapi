@@ -1,36 +1,39 @@
 from __future__ import annotations
-from typing import Any, Dict, Optional, Union, List
+from typing import Annotated, Any, Dict, Optional, Union, List
 from pydantic import AnyUrl, BaseModel, Field, RootModel
 
+from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.common_geojson import GeoJSONPoint, GeoJSONPolygon
 from fastapi import Query
 
 
-class Link(BaseModel):
+class Link(CommonBaseModel):
     href: str = Field(
         ...,
         description='Supplies the URI to a remote resource (or resource fragment).',
         example='http://data.example.com/buildings/123',
     )
     rel: str = Field(
-        ..., description='The type or semantics of the relation.', example='alternate'
+        ...,
+        description='The type or semantics of the relation.',
+        example='alternate',
     )
     type: Optional[str] = Field(
         None,
         description='A hint indicating what the media type of the result of dereferencing the link should be.',
         example='application/geo+json',
     )
-    hreflang: Optional[str] = Field(
+    hreflang: Annotated[Optional[str], OmitIfNone] = Field(
         None,
         description='A hint indicating what the language of the result of dereferencing the link should be.',
         example='en',
     )
-    title: Optional[str] = Field(
+    title: Annotated[Optional[str], OmitIfNone] = Field(
         None,
         description='Used to label the destination of a link such that it can be used as a human-readable identifier.',
         example='Trierer Strasse 70, 53115 Bonn',
     )
-    length: Optional[int] = None
+    length: Annotated[Optional[str], OmitIfNone] = None
 
 
 class Crs2(BaseModel):

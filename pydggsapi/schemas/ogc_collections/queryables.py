@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Annotated, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.ogc_collections.schema import Property
 
 
@@ -23,15 +24,10 @@ class TemporalTypes(BaseModel):
     enum: List[str]
 
 
-class CollectionQueryables(BaseModel):
+class CollectionQueryables(CommonBaseModel):
     schema_: str = Field("https://json-schema.org/draft/2020-12/schema", alias="$schema")
-    id_: Optional[str] = Field(None, alias="$id")
+    id_: Annotated[Optional[str], OmitIfNone] = Field(None, alias="$id")
     type: str = "object"
     properties: Dict[str, Property]
 
     model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
-
-# class Model(BaseModel):
-#    type: str
-#    required: List[str]
-#    properties: Properties

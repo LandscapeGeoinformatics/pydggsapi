@@ -14,19 +14,22 @@ class CommonBaseModel(BaseModel):
 
     @model_serializer
     def model_serialize(self):
-        omit_if_none_fields = {
-            key: field
-            for key, field in self.model_fields.items()
-            if any(isinstance(m, _OmitIfNone) for m in field.metadata)
-        }
-        #fields = getattr(self, "model_fields", self.__fields__)  # noqa
-        values = {
-            key: val
-            for key, val in self
-            if key not in omit_if_none_fields or val is not None
-        }
+        """
+        Reconstruct the mapping considering that not all fields are necessarily annotated with 'OmitIfNone'.
+        Consider the alias name if one was defined by the field.
+        """
+        values = {}
+        for key, val in self:
+            if key not in self.model_fields:
+                continue  # can happen if a 'CommonBaseModel' is used by a derived class
+            field = self.model_fields[key]
+            if any(isinstance(m, _OmitIfNone) for m in field.metadata) and val is None:
+                continue
+            values[field.alias or key] = val
         return values
 
     model_config = ConfigDict(
         populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
     )

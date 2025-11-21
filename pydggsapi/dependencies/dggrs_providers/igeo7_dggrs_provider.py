@@ -1,10 +1,17 @@
 # here should be DGGRID related functions and methods
 # DGGRID ISEA7H resolutions
 
-from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import AbstractDGGRSProvider
+from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import (
+    AbstractDGGRSProvider,
+    ZoneIdRepresentationType,
+)
 from pydggsapi.schemas.common_geojson import GeoJSONPolygon, GeoJSONPoint
 from pydggsapi.schemas.api.dggrs_providers import DGGRSProviderZoneInfoReturn, DGGRSProviderZonesListReturn
-from pydggsapi.schemas.api.dggrs_providers import DGGRSProviderGetRelativeZoneLevelsReturn, DGGRSProviderZonesElement
+from pydggsapi.schemas.api.dggrs_providers import (
+    DGGRSProviderConversionReturn,
+    DGGRSProviderGetRelativeZoneLevelsReturn,
+    DGGRSProviderZonesElement,
+)
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel
 
 import os
@@ -13,7 +20,7 @@ import logging
 import shapely
 import numpy as np
 import decimal
-from typing import Union, List, Final
+from typing import Any, Union, List, Final
 from dggrid4py import DGGRIDv8
 from dggrid4py.igeo7 import get_z7string_resolution
 from dggrid4py.auxlat import geoseries_to_authalic, geoseries_to_geodetic
@@ -94,7 +101,8 @@ class IGEO7Provider(AbstractDGGRSProvider):
             self.wgs84_geodetic_conversion = False
         self.properties = IGEO7MetafileConfig(**params)
 
-    def convert(self, zoneIds: list, targedggrs: type[AbstractDGGRSProvider]):
+    def convert(self, zoneIds: List[str], targedggrs: str,
+                zone_id_repr: ZoneIdRepresentationType = 'textual') -> DGGRSProviderConversionReturn:
         raise NotImplementedError(f"{__name__} convert not support")
 
     def get(self, zoom):
@@ -121,7 +129,7 @@ class IGEO7Provider(AbstractDGGRSProvider):
         return gdf
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
-    def centroid_from_cellid(self, cellid: list, zone_level, clip_subset_type='WHOLE_EARTH', clip_cell_res=1):
+    def centroid_from_cellid(self, cellid: List[str], zone_level, clip_subset_type='WHOLE_EARTH', clip_cell_res=1):
         gdf = self.dggrid_instance.grid_cell_centroids_from_cellids(cellid, self.dggrs, zone_level,
                                                                     clip_subset_type=clip_subset_type,
                                                                     clip_cell_res=clip_cell_res,
@@ -130,7 +138,7 @@ class IGEO7Provider(AbstractDGGRSProvider):
         return gdf
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
-    def hexagon_from_cellid(self, cellid: list, zone_level, clip_subset_type='WHOLE_EARTH', clip_cell_res=1):
+    def hexagon_from_cellid(self, cellid: List[str], zone_level, clip_subset_type='WHOLE_EARTH', clip_cell_res=1):
         gdf = self.dggrid_instance.grid_cell_polygons_from_cellids(cellid, self.dggrs,
                                                                    zone_level, clip_subset_type=clip_subset_type,
                                                                    clip_cell_res=clip_cell_res,
@@ -150,10 +158,10 @@ class IGEO7Provider(AbstractDGGRSProvider):
         gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
         return gdf
 
-    def zone_id_from_textual(self, cellIds: list, zone_id_repr: str) -> list:
+    def zone_id_from_textual(self, cellIds: List[str], zone_id_repr: str) -> List[Any]:
         raise NotImplementedError
 
-    def zone_id_to_textual(self, cellIds: list, zone_id_repr: str) -> list:
+    def zone_id_to_textual(self, cellIds: List[Any], zone_id_repr: str) -> List[str]:
         raise NotImplementedError
 
     def get_cls_by_zone_level(self, zone_level: int):

@@ -115,8 +115,18 @@ def query_zone_info(
     zoneId = zoneinfoReq.zoneId  # reset the zoneId to original one as string
     if (filter_ > 0):
         dggs_link = '/'.join(str(current_url).split('/')[:-3])
-        dggs_link = Link(href=dggs_link, rel='[ogc-rel:dggrs]', title='Link back to /dggs (get list of supported dggs)')
-        data_link = Link(href=str(current_url) + '/data', rel='[ogc-rel:dggrs-zone-data]', title='Link to data-retrieval for the zoneId)')
+        dggs_link = Link(
+            href=dggs_link,
+            rel='[ogc-rel:dggrs]',
+            title='Link back to /dggs (get list of supported dggs)',
+            type='application/json',
+        )
+        data_link = Link(
+            href=f'{current_url}/data',
+            rel='[ogc-rel:dggrs-zone-data]',
+            title='Link to data-retrieval for the zoneId.',
+            type='application/json',
+        )
         return_ = {'id': zoneId}
         return_['level'] = zoneinfo.zone_level
         return_['links'] = [data_link, dggs_link]

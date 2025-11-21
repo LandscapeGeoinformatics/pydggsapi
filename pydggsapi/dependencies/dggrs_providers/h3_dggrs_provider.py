@@ -73,7 +73,7 @@ class H3Provider(AbstractDGGRSProvider):
         if (zone_id_repr == "int"):
             return [h3.str_to_int(z) for z in cellIds]
 
-    def zone_id_to_textual(self, cellIds: list, zone_id_repr: str) -> list:
+    def zone_id_to_textual(self, cellIds: List[str], zone_id_repr: str) -> List[str]:
         if (len(cellIds) == 0):
             return []
         if (zone_id_repr == "textual" or zone_id_repr == "hexstring"):
@@ -84,7 +84,6 @@ class H3Provider(AbstractDGGRSProvider):
                 return [h3.int_to_str(int(z)) for z in cellIds]
         return [h3.int_to_str(z) for z in cellIds]
 
-
     def get_cls_by_zone_level(self, zone_level) -> float:
         return h3.average_hexagon_edge_length(zone_level, unit='km')
 
@@ -94,7 +93,7 @@ class H3Provider(AbstractDGGRSProvider):
             if (length < cls_km):
                 return i
 
-    def get_cells_zone_level(self, cellIds: list) -> List[int]:
+    def get_cells_zone_level(self, cellIds: List[str]) -> List[int]:
         zoneslevel = []
         try:
             for c in cellIds:
@@ -104,7 +103,7 @@ class H3Provider(AbstractDGGRSProvider):
             logger.error(f'{__name__} zone id {cellIds} failed: {e}')
             raise Exception(f'{__name__} zone id {cellIds} failed: {e}')
 
-    def get_relative_zonelevels(self, cellId: Any, base_level: int, zone_levels: List[int],
+    def get_relative_zonelevels(self, cellId: str, base_level: int, zone_levels: List[int],
                                 geometry="zone-region") -> DGGRSProviderGetRelativeZoneLevelsReturn:
         children = {}
         geometry = geometry.lower()
@@ -157,7 +156,7 @@ class H3Provider(AbstractDGGRSProvider):
                                                'geometry': geometry,
                                                'returnedAreaMetersSquare': area})
 
-    def zonesinfo(self, cellIds: list) -> DGGRSProviderZoneInfoReturn:
+    def zonesinfo(self, cellIds: List[str]) -> DGGRSProviderZoneInfoReturn:
         centroid = []
         hex_geometry = []
         total_area = []
@@ -188,6 +187,3 @@ class H3Provider(AbstractDGGRSProvider):
         points = [points] if (geometry != 'zone-region') else points
         points = tuple(p[::-1] for p in points)
         return GEO(points)
-
-
-

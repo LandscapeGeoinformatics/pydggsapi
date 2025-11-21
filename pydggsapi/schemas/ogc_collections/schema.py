@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Annotated, Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
 
 from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
@@ -19,8 +19,8 @@ class Property(CommonBaseModel):
     description: Annotated[Optional[str], OmitIfNone] = None
     language: Annotated[Optional[str], OmitIfNone] = None
     readOnly: Annotated[Optional[bool], OmitIfNone] = None
-    x_ogc_role: Annotated[Optional[str], OmitIfNone] = None
-    x_ogc_propertySeq: Annotated[Optional[int], OmitIfNone] = None
+    x_ogc_role: Annotated[Optional[str], OmitIfNone] = Field(None, alias="x-ogc-role")
+    x_ogc_propertySeq: Annotated[Optional[int], OmitIfNone] = Field(None, alias="x-ogc-propertySeq")
 
 
 class JsonSchemaResponse(JSONResponse):

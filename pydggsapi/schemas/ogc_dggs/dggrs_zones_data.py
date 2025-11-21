@@ -1,13 +1,14 @@
 from __future__ import annotations
+from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.ogc_collections.schema import Property
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import Feature
 from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoRequest
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import zone_datetime_placeholder, datetime_cql_validation
 
-from typing import List, Literal, Optional, Dict, Union, Any
+from typing import Annotated, List, Literal, Optional, Dict, Union, Any
 from fastapi.exceptions import HTTPException
 from fastapi import Query
-from pydantic import AnyUrl, BaseModel, Field, model_validator
+from pydantic import AnyUrl, Field, ConfigDict, model_validator
 
 zone_data_support_returntype = [
     'application/json',     # DGGS-JSON
@@ -27,8 +28,10 @@ zone_data_support_formats = {
 }
 zone_data_support_formats.update({typ: typ for typ in zone_data_support_returntype})
 
+ZoneGeometryType = Literal['zone-centroid', 'zone-region']
 
-class ZonesDataRequest(BaseModel):
+
+class ZonesDataRequest(CommonBaseModel):
     zone_depth: Optional[str] = Query(
         default=None,
         alias="zone-depth",
@@ -38,7 +41,7 @@ class ZonesDataRequest(BaseModel):
             "a range (int-int) of depths, or a comma-separated list of specific depth values or ranges."
         )
     )
-    geometry: Optional[Literal['zone-centroid', 'zone-region']] = Query(default=None)
+    geometry: Optional[ZoneGeometryType] = Query(default=None)
     filter: Optional[str] = Query(default=None)
     datetime: Optional[str] = Query(default=None)
     properties: Optional[str] = Query(
@@ -85,40 +88,57 @@ class ZonesDataRequest(BaseModel):
         return self
 
 
-class Value(BaseModel):
+class Shape(CommonBaseModel):
+    count: int
+    subZones: Annotated[Optional[int], OmitIfNone] = None
+    dimensions: Annotated[Optional[Dict[str, int]], OmitIfNone] = None
+
+
+class Value(CommonBaseModel):
     depth: int
-    # FIXME: invalid 'shape' object
-    #   (https://github.com/opengeospatial/ogcapi-discrete-global-grid-systems/blob/ea1a2ad/core/schemas/dggs-json/dggs-json.yaml#L104)
-    shape: Dict[str, int]
+    shape: Shape
     data: list[Any]
 
 
-class DimensionGrid(BaseModel):
-    type: str
-    coordinates: List[List[float]]  # List of [lon, lat] pairs
+class DimensionGrid(CommonBaseModel):
+    cellsCount: int
+    # required: coordinates OR firstCoordinate + resolution
+    coordinates: Annotated[Union[List[Optional[float]], List[Optional[str]]], OmitIfNone] = None
+    firstCoordinate: Annotated[Optional[Union[float, str]], OmitIfNone] = None
+    resolution: Annotated[str, OmitIfNone] = None
 
 
-class Dimension(BaseModel):
+class Dimension(CommonBaseModel):
     name: str
-    # FIXME: technically 'grid' is 'required' by API,
-    #   but can be problematic (https://github.com/opengeospatial/ogcapi-discrete-global-grid-systems/issues/94)
-    grid: Optional[str] = None
-    interval: Optional[Union[List[Optional[float]], List[Optional[str]]]] = None
-    definition: Optional[str] = None
-    unit: Optional[str] = None
-    unitLang: Optional[str] = None
+    grid: DimensionGrid
+    interval: Union[List[Optional[float]], List[Optional[str]]]
+    definition: Annotated[Optional[str], OmitIfNone] = None
+    unit: Annotated[Optional[str], OmitIfNone] = None
+    unitLang: Annotated[Optional[str], OmitIfNone] = None
 
 
-class ZonesDataDggsJsonResponse(BaseModel):
+class Schema(CommonBaseModel):
+    schema_: str = Field("https://json-schema.org/draft/2020-12/schema", alias="$schema")
+    id_: Optional[str] = Field(None, alias="$id")
+    title: str = "DGGS Zones Data Schema"
+    type: str = "object"
+    properties: Dict[str, Property]
+
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
+
+class ZonesDataDggsJsonResponse(CommonBaseModel):
+    schema_: str = Field("https://schemas.opengis.net/ogcapi/dggs/1.0/core/schemas/dggs-json/dggs-json.json", alias='$schema')
     dggrs: AnyUrl
     zoneId: str
     depths: List[int]
-    # schema_: Optional[Schema] = Field(None, alias='schema')
-    properties: Dict[str, Property]
+    schema: Schema
+    dimensions: Annotated[Optional[List[Dimension]], OmitIfNone] = None
     values: Dict[str, List[Value]]
-    dimensions: Optional[List[Dimension]] = None
+
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
 
-class ZonesDataGeoJson(BaseModel):
+class ZonesDataGeoJson(CommonBaseModel):
     type: str
     features: List[Feature]
