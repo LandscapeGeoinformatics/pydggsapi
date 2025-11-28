@@ -17,7 +17,7 @@ from pydggsapi.dependencies.api.utils import getCQLAttributes
 from fastapi.responses import FileResponse, Response
 from urllib import parse
 from numcodecs import Blosc
-from typing import List, Dict, Optional, Tuple, Union
+from typing import Any, List, Dict, Optional, Tuple, Union, cast
 from scipy.stats import mode
 from pygeofilter.ast import AstType
 import ubjson
@@ -39,7 +39,7 @@ def query_zone_data(
     dggrs_desc: DggrsDescription,
     dggrs_provider: AbstractDGGRSProvider,
     collection: Dict[str, Collection],
-    collection_provider: List[AbstractCollectionProvider],
+    collection_provider: Dict[str, AbstractCollectionProvider],
     returntype='application/json',  # DGGS-JSON by default
     returngeometry='zone-region',
     cql_filter: AstType = None,
@@ -241,8 +241,13 @@ def query_zone_data(
         return ZonesDataGeoJson(type='FeatureCollection', features=features)
     link = [k.href for k in dggrs_desc.links if (k.rel == '[ogc-rel:dggrs-definition]')][0]
     relative_levels = [rl - base_level for rl in relative_levels]
-    return_ = {'dggrs': link, 'zoneId': str(zoneId), 'depths': relative_levels,
-               'schema': Schema(properties=properties), 'values': values}
+    return_ = cast(ZonesDataDggsJsonResponse | Dict[str, Any], {
+        'dggrs': link,
+        'zoneId': str(zoneId),
+        'depths': relative_levels,
+        'schema': Schema(properties=properties),
+        'values': values,
+    })
     if data_col_dims:
         return_['dimensions'] = list(data_col_dims.values())
     dggs_json = ZonesDataDggsJsonResponse(**return_)

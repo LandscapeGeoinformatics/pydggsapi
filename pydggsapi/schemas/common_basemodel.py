@@ -20,6 +20,10 @@ class CommonBaseModel(BaseModel):
         """
         values = {}
         for key, val in self:
+            is_extra = key in (self.__pydantic_extra__ or {}) and self.model_config.get("extra") == 'allow'
+            if is_extra:  # already validated by definition (otherwise it wouldn't be in __pydantic_extra__)
+                values[key] = val
+                continue
             if key not in self.model_fields:
                 continue  # can happen if a 'CommonBaseModel' is used by a derived class
             field = self.model_fields[key]

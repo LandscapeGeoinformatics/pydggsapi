@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pydggsapi.schemas.common_basemodel import OmitIfNone, CommonBaseModel
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import Link
-from pydggsapi.schemas.ogc_collections.extent import Spatial, Temporal
+from pydggsapi.schemas.ogc_collections.extent import Extent
 
 
 from datetime import datetime
@@ -19,15 +19,6 @@ class DataType1(Enum):
 
 class DataType(RootModel):
     root: Union[str, DataType1]
-
-
-class Extent(BaseModel):
-    spatial: Optional[Spatial] = Field(
-        None, description='The spatial extent of the data in the collection.'
-    )
-    temporal: Optional[Temporal] = Field(
-        None, description='The temporal extent of the features in the collection.'
-    )
 
 
 class CollectionDesc(CommonBaseModel):
@@ -48,7 +39,7 @@ class CollectionDesc(CommonBaseModel):
     )
     attribution: Annotated[Optional[str], OmitIfNone] = Field(None, title='attribution for the collection')
     links: List[Link] = Field(
-        lambda: [],
+        [],
         examples=[
             [
                 {
@@ -126,9 +117,14 @@ class CollectionDesc(CommonBaseModel):
         None, description='Maximum cell size for usage of the collection.'
     )
 
-class Collections(BaseModel):
-    links: List[Link]
-    timeStamp: Optional[datetime] = None
-    #numberMatched: Optional[NumberMatched] = None
-    #numberReturned: Optional[NumberReturned] = None
+
+class Collections(CommonBaseModel):
     collections: List[CollectionDesc]
+    links: List[Link]
+    timeStamp: Annotated[Optional[datetime], OmitIfNone] = None
+    numberMatched: Annotated[Optional[int], OmitIfNone] = Field(
+        None, ge=0, description='The number of collections that match the query (if a query was provided).'
+    )
+    numberReturned: Annotated[Optional[int], OmitIfNone] = Field(
+        None, ge=0, description='The number of collections returned in the response.'
+    )
