@@ -17,6 +17,7 @@ COPY pyproject.toml poetry.lock ${APP_DIR}/
 
 # install utility dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
         curl \
         gcc \
         g++ \
@@ -33,25 +34,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cmake -D CMAKE_BUILD_TYPE=Release .. \
     && make -j $(nproc) \
     && cp src/apps/dggrid/dggrid /usr/local/bin/dggrid \
-    # cleanup
-    && apt-get remove -y \
-        cmake \
-    && rm -rf /tmp/DGGRID-${DGGRID_VERSION}
-
-# install runtime/package dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        gcc \
-        g++ \
+    && rm -rf /tmp/DGGRID-${DGGRID_VERSION} \
     # install project python packages
-    && pip install poetry \
+    && cd ${APP_DIR} \
+    && pip install --no-cache-dir poetry \
     && poetry config virtualenvs.create false \
-    && poetry install --no-root --no-directory -v \
+    && poetry install --no-root --no-directory --no-cache --only main -v \
     # cleanup
+    && rm -fr ~/.cache/ \
     && apt-get remove -y \
+        curl \
+        make \
+        cmake \
         gcc \
         g++ \
     && apt-get autoremove -y \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # setup directory and config structure
@@ -65,13 +63,11 @@ ENV dggs_api_config=${APP_CONFIG_DIR}/pydggsapi-config.json
 ENV DGGRID_PATH=/usr/local/bin/dggrid
 
 # obtain dependency source files
-COPY README.md ${APP_DIR}/
+COPY README.md LICENSE ${APP_DIR}/
 COPY pydggsapi/ ${APP_DIR}/pydggsapi/
 
-COPY LICENSE .
-
 # install package (only) incrementally
-RUN poetry install --only-root
+RUN poetry install --only-root --no-cache
 
 # command with sh to allow for environment variable expansion
 CMD [ \
