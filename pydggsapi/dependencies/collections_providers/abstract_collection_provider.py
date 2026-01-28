@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 from pygeofilter.ast import AstType
+from datetime import datetime
 import numpy as np
 
 
@@ -37,7 +38,8 @@ class AbstractCollectionProvider(ABC):
         include_datetime: bool = False,
         include_properties: List[str] = None,
         exclude_properties: List[str] = None,
-        input_zoneIds_padding: bool = True
+        input_zoneIds_padding: bool = True,
+        collection_timestamp: datetime = None
     ) -> CollectionProviderGetDataReturn:
         raise NotImplementedError
 

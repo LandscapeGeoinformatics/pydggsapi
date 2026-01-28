@@ -1,6 +1,8 @@
 from pygeofilter.ast import Attribute as pygeofilter_attrs
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import zone_datetime_placeholder
 
+# The utility function skips returning the datetime placeholder in order to avoid
+# mixing up the cql filter with datetime column
 def getCQLAttributes(cql_filter):
     cql_attributes = set()
     if (isinstance(cql_filter, pygeofilter_attrs)):
