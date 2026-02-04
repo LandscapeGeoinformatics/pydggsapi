@@ -2,13 +2,18 @@ from __future__ import annotations
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel, Link
 from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.common_geojson import GeoJSONPolygon, GeoJSONPoint
-from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescriptionRequest
+from pydggsapi.schemas.ogc_dggs.dggrs_descrption import CollectionDggrsPathRequest, DggrsPathRequest
 from typing import Annotated, List, Optional
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, Field, conint
+from fastapi import Path
 
 
-class ZoneInfoRequest(DggrsDescriptionRequest):
-    zoneId: str
+class ZoneInfoPathRequest(DggrsPathRequest):
+    zoneId: str = Field(title="zoneId", description="Identifier of the zone to request within the DGGRS.")
+
+
+class CollectionZoneInfoPathRequest(CollectionDggrsPathRequest, ZoneInfoPathRequest):
+    pass
 
 
 class ZoneInfoResponse(CommonBaseModel):

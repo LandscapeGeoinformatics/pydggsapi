@@ -34,7 +34,7 @@ dggrid4py = "^0.5.3"
 python-dotenv = "^1.0.0"
 gunicorn = "^23.0.0"
 tinydb = "^4.8.2"
-fastapi = "^0.120.0"
+fastapi = ">=0.123.3"
 h3 = "^4.2.0"
 scipy = "^1.15.0"
 xarray = {extras = ["io"], version = "^2025.3.1"}

@@ -1,16 +1,15 @@
 from __future__ import annotations
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel, Feature, ReturnGeometryTypes
-from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescriptionRequest
-from typing import Annotated, List, Optional, Union, Tuple, Literal, get_args
+
 from fastapi import Depends, Query
 from fastapi.exceptions import HTTPException
-
+from pydantic import BaseModel, Field, conint, model_validator
 from pygeofilter.parsers.cql_json import parse as cql_json_parser
 from pygeofilter.parsers.ecql import parse as cql_text_parser
 from pygeofilter.ast import AstType
 from datetime import datetime as dt
+from typing import Annotated, List, Optional, Union, Tuple, Literal, get_args
 import json
-from pydantic import BaseModel, conint, model_validator
 
 zone_query_support_returntype = ['application/json', 'application/geo+json']
 zone_query_support_formats = {
@@ -30,7 +29,7 @@ def bbox_converter(bbox: Optional[str] = None) -> Optional[List[float]]:
     return [float(i) for i in bbox]
 
 
-def datetime_cql_validation(datetime: str | None, cql_filter: str | None) -> AstType | None:
+def datetime_cql_validation(datetime: str | None, cql_filter: str | None) -> Tuple[dt | None, AstType | None]:
     if (datetime is not None):
         datetime = datetime.split("/")
         try:
@@ -65,9 +64,8 @@ def datetime_cql_validation(datetime: str | None, cql_filter: str | None) -> Ast
     return datetime, cql_filter
 
 
-#class ZonesRequest(DggrsDescriptionRequest):
 class ZonesRequest(BaseModel):
-    zone_level: Optional[conint(ge=0)] = Query(
+    zone_level: Optional[conint(ge=0)] = Field(
         default=None,
         alias="zone-level",
         description=(
@@ -76,7 +74,7 @@ class ZonesRequest(BaseModel):
             "If not specified, this defaults to the most detailed zone that the system is able to return for the specific request."
         )
     )
-    compact_zone: Optional[bool] = Query(
+    compact_zone: Optional[bool] = Field(
         default=True,
         alias="compact-zone",
         description=(
@@ -84,7 +82,7 @@ class ZonesRequest(BaseModel):
             " the parent zone will be returned as a shorthand for that list of children zone.  If set to false, all zones returned will be of the requested zone level."
         )
     )
-    parent_zone: Optional[Union[int, str]] = Query(
+    parent_zone: Optional[Union[int, str]] = Field(
         default=None,
         alias="parent-zone",
         description=(
@@ -92,12 +90,12 @@ class ZonesRequest(BaseModel):
             "Used together with `zone-level`, it allows to explore the response for a large zone query in a hierarchical manner."
         )
     )
-    limit: Optional[int] = Query(default=1000)
-    bbox_crs: Optional[str] = Query(default=None,alias="bbox-crs")
-    bbox: Optional[str] = Query(default=None)
-    geometry: Optional[ReturnGeometryTypes] = Query(default=None)
-    filter: Optional[str] = Query(default=None)
-    datetime: Optional[str] = Query(default=None)
+    limit: Optional[int] = Field(default=1000)
+    bbox_crs: Optional[str] = Field(default=None, alias="bbox-crs")
+    bbox: Optional[str] = Field(default=None)
+    geometry: Optional[ReturnGeometryTypes] = Field(default=None)
+    filter: Optional[str] = Field(default=None)
+    datetime: Optional[str] = Field(default=None)
 
     @model_validator(mode="after")
     def validation(self):

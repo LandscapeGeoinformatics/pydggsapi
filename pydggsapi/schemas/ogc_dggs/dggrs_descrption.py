@@ -1,13 +1,27 @@
 from __future__ import annotations
+from pydggsapi.schemas.common_basemodel import CommonBaseModel
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import Link, LinkTemplate, CrsModel
-from typing import List, Optional, Union
+from typing import Annotated, List, Optional, Union
 from pydantic import AnyUrl, BaseModel, Field, conint, model_validator
-from fastapi import HTTPException
+from fastapi import HTTPException, Path
 
 
-class DggrsDescriptionRequest(BaseModel):
-    dggrsId: str  # = Path(...)
-    collectionId: Optional[str] = None
+class CollectionPathRequest(CommonBaseModel):
+    collectionId: str = Field(
+        ...,
+        description='Identifier of the collection to be requested.',
+    )
+
+
+class DggrsPathRequest(CommonBaseModel):
+    dggrsId: str = Field(
+        ...,
+        description='Identifier of the Discrete Global Grid Reference System (DGGRS) to be requested.',
+    )
+
+
+class CollectionDggrsPathRequest(CollectionPathRequest, DggrsPathRequest):
+    pass
 
 
 class DggrsDescription(BaseModel):

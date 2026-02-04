@@ -2,10 +2,10 @@ from __future__ import annotations
 from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.ogc_collections.schema import Property
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import Feature, ReturnGeometryTypes
-from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoRequest
+from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoPathRequest
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import zone_datetime_placeholder, datetime_cql_validation
 
-from typing import Annotated, List, Literal, Optional, Dict, Union, Any
+from typing import Annotated, List, Literal, Optional, Dict, Union, Any, cast
 from fastapi.exceptions import HTTPException
 from fastapi import Query
 from pydantic import AnyUrl, Field, ConfigDict, model_validator
@@ -29,9 +29,16 @@ zone_data_support_formats = {
 zone_data_support_formats.update({typ: typ for typ in zone_data_support_returntype})
 
 
-
 class ZonesDataRequest(CommonBaseModel):
-    zone_depth: Optional[str] = Query(
+    """
+    DGGS Zones Data Request Query Parameters Model.
+    """
+    # NOTE:
+    #   Queries are all optional by default, so adding 'Optional[str]'
+    #   creates duplicates 'string | (string | null)' typings in OpenAPI schema.
+    #   Simply list the 'str' type to avoid this, although the actual omission value will allow 'default=None'.
+
+    zone_depth: str = Field(
         default=None,
         alias="zone-depth",
         pattern=r"(\d{1,2})|(\d{1,2}-\d{1,2})|(\d{1,2}[,\d{1,2}]+)",
@@ -40,10 +47,12 @@ class ZonesDataRequest(CommonBaseModel):
             "a range (int-int) of depths, or a comma-separated list of specific depth values or ranges."
         )
     )
-    geometry: Optional[ReturnGeometryTypes] = Query(default=None)
-    filter: Optional[str] = Query(default=None)
-    datetime: Optional[str] = Query(default=None)
-    properties: Optional[str] = Query(
+    geometry: ReturnGeometryTypes = Field(default=None)
+    filter: str = Field(default=None)
+    datetime: str = Field(default=None)
+
+    # although we transform them to 'list[str]', use 'str' here report the patterns correctly in OpenAPI schema
+    properties: str = Field(
         default=None,
         pattern=r"[\w\.\-\_]+(,[\w\.\-\_]+)*",
         description=(
@@ -51,7 +60,7 @@ class ZonesDataRequest(CommonBaseModel):
             "If not specified, all available properties are returned by default."
         )
     )
-    exclude_properties: Optional[str] = Query(
+    exclude_properties: str = Field(
         default=None,
         alias="exclude-properties",
         pattern=r"[\w\.\-\_]+(,[\w\.\-\_]+)*",
@@ -81,9 +90,9 @@ class ZonesDataRequest(CommonBaseModel):
                 raise HTTPException(status_code=500, detail="depth must be integer >=0 ")
         self.datetime, self.filter = datetime_cql_validation(self.datetime, self.filter)
         if self.properties is not None:
-            self.properties = self.properties.split(",")
+            self.properties = self.properties.split(",")  # type: ignore
         if self.exclude_properties is not None:
-            self.exclude_properties = self.exclude_properties.split(",")
+            self.exclude_properties = self.exclude_properties.split(",")  # type: ignore
         return self
 
 

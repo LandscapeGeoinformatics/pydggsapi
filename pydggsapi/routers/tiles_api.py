@@ -7,7 +7,6 @@ from typing import Annotated
 
 from pydggsapi.schemas.tiles.tiles import TilesRequest, TilesJSON
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import ZonesRequest, ZonesResponse
-from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoRequest
 from pydggsapi.schemas.ogc_dggs.dggrs_zones_data import ZonesDataRequest
 
 from pydggsapi.dependencies.api.mercator import Mercator
@@ -40,9 +39,16 @@ project = pyproj.Transformer.from_crs(SRID_SPHERICAL_MERCATOR, SRID_LNGLAT, alwa
 transformer = pyproj.Transformer.from_crs(crs_from=SRID_LNGLAT, crs_to=SRID_SPHERICAL_MERCATOR, always_xy=True)
 
 
-@router.get("/{collectionId}/{z}/{x}/{y}", tags=['tiles-api'])
-async def query_mvt_tiles(req: Request, tilesreq: TilesRequest = Depends(),
-                          mercator=Depends(Mercator)):
+@router.get(
+    "/{collectionId}/{z}/{x}/{y}",
+    summary="Mapbox Vector Tiles (MVT) Data Retrieval",
+    tags=['Tiles API'],
+)
+async def query_mvt_tiles(
+    req: Request,
+    tilesreq: TilesRequest = Depends(),
+    mercator=Depends(Mercator),
+) -> Response:
     logger.debug(f'{__name__} tiles info: {tilesreq.collectionId} {tilesreq.dggrsId} {tilesreq.z} {tilesreq.x} {tilesreq.y}')
     collection_info = _get_collection(tilesreq.collectionId, tilesreq.dggrsId if (tilesreq.dggrsId != '') else None)
     tilesreq.dggrsId = tilesreq.dggrsId if (tilesreq.dggrsId != '') else collection_info[tilesreq.collectionId].collection_provider.dggrsId
@@ -106,8 +112,12 @@ async def query_mvt_tiles(req: Request, tilesreq: TilesRequest = Depends(),
     return Response(bytes(content), media_type="application/x-protobuf")
 
 
-@router.get("/{collectionId}.json", tags=['tiles-api'])
-async def get_tiles_json(req: Request, collectionId: str):
+@router.get(
+    "/{collectionId}.json",
+    summary="Tileset Metadata Retrieval in TileJSON",
+    tags=['Tiles API'],
+)
+async def get_tiles_json(req: Request, collectionId: str) -> TilesJSON:
     logging.debug(f'{__name__} {collectionId} get_tiles_json called')
     collection_info = _get_collection(collectionId=collectionId)[collectionId]
     default_dggrsId = collection_info.collection_provider.dggrsId
