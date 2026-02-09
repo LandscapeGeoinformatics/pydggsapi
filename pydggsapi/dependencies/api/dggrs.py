@@ -22,13 +22,15 @@ def get_conformance_classes():
         "https://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections",
         "https://www.opengis.net/spec/ogcapi-common-2/1.0/conf/umd-collection",
         "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/queryables",
-        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/returnables-and-receivables"
-        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/schemas"
+        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/returnables-and-receivables",
+        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/schemas",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/core",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/root-dggs",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/collection-dggs",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-query",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-query-cql2-filter",
+        # "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-unit64",  # application/x-binary zone-list
+        "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-geojson",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-custom-depths",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-retrieval",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-cql2-filter",
