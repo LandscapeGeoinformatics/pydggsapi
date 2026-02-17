@@ -82,10 +82,11 @@ def _authalic_to_geodetic(geometry, convert: bool, polygon: bool = True) -> GeoS
     else:
         lat_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[1]))
         lon_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[0]))
+    num_of_vertices = lat_array.shape[-1]
     lat_array = da.from_array(np.stack(lat_array.to_numpy()), chunks=1000).flatten()
     lon_array = np.stack(lon_array.to_numpy())
     lat_array = da.apply_gufunc(_ellipsoids_authalic_to_geodetic, "()->()", lat_array, vectorize=True,).compute(scheduler='processes')
-    lat_array = lat_array.reshape(-1, 7)
+    lat_array = lat_array.reshape(-1, num_of_vertices)
     geom = np.stack([lon_array, lat_array], axis=-1)
     if (polygon):
         # stack lon_array,lat_array at the last dim, then convert the last dim to a 2-tuple
@@ -113,10 +114,11 @@ def _geodetic_to_authalic(geometry, convert: bool, polygon: bool = True) -> GeoS
     else:
         lat_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[1]))
         lon_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[0]))
+    num_of_vertices = lat_array.shape[-1]
     lat_array = da.from_array(np.stack(lat_array.to_numpy())).flatten()
     lon_array = np.stack(lon_array.to_numpy())
     lat_array = da.apply_gufunc(_ellipsoids_geodetic_to_authalic, "()->()", lat_array, vectorize=True,).compute()
-    lat_array = lat_array.reshape(-1, 7)
+    lat_array = lat_array.reshape(-1, num_of_vertices)
     geom = np.stack([lon_array, lat_array], axis=-1)
     if (polygon):
         # stack lon_array,lat_array at the last dim, then convert the last dim to a 2-tuple
