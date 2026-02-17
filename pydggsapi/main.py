@@ -28,10 +28,12 @@ def run():
     load_dotenv()
     bind = os.environ.get('bind', '0.0.0.0:8000')
     workers = os.environ.get('workers', 4)
+    timeout = os.environ.get('worker_timeout', 120)
     options = {
         "bind": bind,
         "workers": workers,
         "worker_class": "uvicorn.workers.UvicornWorker",
+        "timeout": timeout
     }
     log_level = os.environ.get('LOGLEVEL', logging.INFO)
     # set up logging for app as console output
@@ -46,10 +48,12 @@ if __name__ == '__main__':
     load_dotenv()
     bind = os.environ.get('bind', '0.0.0.0:8000')
     workers = os.environ.get('workers', 4)
+    timeout = os.environ.get('worker_timeout', 120)
     options = {
         "bind": bind,
         "workers": workers,
         "worker_class": "uvicorn.workers.UvicornWorker",
+        "timeout": timeout
     }
 
     log_level = os.environ.get('LOGLEVEL', logging.INFO)

@@ -20,11 +20,13 @@ import tempfile
 import logging
 import shapely
 import numpy as np
+import dask.array as da
 import decimal
 from typing import Any, Union, List, Final, Optional, get_args
 from dggrid4py import DGGRIDv8
 from dggrid4py.igeo7 import get_z7string_resolution, z7hex_to_z7string
 from dggrid4py.auxlat import geoseries_to_authalic, geoseries_to_geodetic
+from pygeodesy.ellipsoids import Ellipsoids
 from geopandas.geoseries import GeoSeries
 from dotenv import load_dotenv
 from shapely.geometry import box
@@ -34,6 +36,7 @@ logger = logging.getLogger()
 
 load_dotenv()
 
+wgs84 = Ellipsoids.WGS84
 
 @dataclass
 class IGEO7MetafileConfig():
@@ -51,22 +54,100 @@ class IGEO7MetafileConfig():
     dggs_vert0_azimuth: Final[decimal.Decimal | float | str] = 0.0
 
 
+def _ellipsoids_authalic_to_geodetic(x):
+    return wgs84.auxAuthalic(x, inverse=True)
+
+
+def _ellipsoids_geodetic_to_authalic(x):
+    return wgs84.auxAuthalic(x, inverse=True)
+
+
+def _create_polygon(list_of_point):
+    return shapely.Polygon(list_of_point)
+
+
+def _create_point(point):
+    return shapely.Point(point)
+
+
 # Alway returns a GeoSeries
-def _authalic_to_geodetic(geometry, convert: bool) -> GeoSeries:
+def _authalic_to_geodetic(geometry, convert: bool, polygon: bool = True) -> GeoSeries:
     if (not isinstance(geometry, GeoSeries)):
         geometry = GeoSeries(geometry)
     if (not convert):
         return geometry
-    return geoseries_to_geodetic(geometry)
+    if (polygon):
+        lat_array = geometry.geometry.apply(lambda geom: np.array(geom.exterior.coords.xy[1]))
+        lon_array = geometry.geometry.apply(lambda geom: np.array(geom.exterior.coords.xy[0]))
+    else:
+        lat_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[1]))
+        lon_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[0]))
+    lat_array = da.from_array(np.stack(lat_array.to_numpy()), chunks=1000).flatten()
+    lon_array = np.stack(lon_array.to_numpy())
+    lat_array = da.apply_gufunc(_ellipsoids_authalic_to_geodetic, "()->()", lat_array, vectorize=True,).compute(scheduler='processes')
+    lat_array = lat_array.reshape(-1, 7)
+    geom = np.stack([lon_array, lat_array], axis=-1)
+    if (polygon):
+        # stack lon_array,lat_array at the last dim, then convert the last dim to a 2-tuple
+        # ex. 40000 polygons = [40000,7, 2] after stack, then change it to [40000,7]
+        geom = geom.view(dtype=np.dtype([('x', 'float'), ('y', 'float')]))
+        geom = geom.reshape(geom.shape[:-1])
+        geom = np.apply_along_axis(_create_polygon, -1, geom)
+    else:
+        # stack lon_array,lat_array at the last dim, squeeze the dim
+        # ex. 40000 polygons = [40000,1, 2] after stack, then squeeze it to [40000, 2]
+        geom = geom.squeeze(axis=1)
+        geom = np.apply_along_axis(_create_point, -1, geom)
+    return GeoSeries(geom)
 
 
 # Alway returns a GeoSeries
-def _geodetic_to_authalic(geometry, convert: bool) -> GeoSeries:
+def _geodetic_to_authalic(geometry, convert: bool, polygon: bool = True) -> GeoSeries:
     if (not isinstance(geometry, GeoSeries)):
         geometry = GeoSeries(geometry)
     if (not convert):
         return geometry
-    return geoseries_to_authalic(geometry)
+    if (polygon):
+        lat_array = geometry.geometry.apply(lambda geom: np.array(geom.exterior.coords.xy[1]))
+        lon_array = geometry.geometry.apply(lambda geom: np.array(geom.exterior.coords.xy[0]))
+    else:
+        lat_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[1]))
+        lon_array = geometry.geometry.apply(lambda geom: np.array(geom.coords.xy[0]))
+    lat_array = da.from_array(np.stack(lat_array.to_numpy())).flatten()
+    lon_array = np.stack(lon_array.to_numpy())
+    lat_array = da.apply_gufunc(_ellipsoids_geodetic_to_authalic, "()->()", lat_array, vectorize=True,).compute()
+    lat_array = lat_array.reshape(-1, 7)
+    geom = np.stack([lon_array, lat_array], axis=-1)
+    if (polygon):
+        # stack lon_array,lat_array at the last dim, then convert the last dim to a 2-tuple
+        # ex. 40000 polygons = [40000,7, 2] after stack, then change it to [40000,7]
+        geom = geom.view(dtype=np.dtype([('x', 'float'), ('y', 'float')]))
+        geom = geom.reshape(geom.shape[:-1])
+        geom = np.apply_along_axis(_create_polygon, -1, geom)
+    else:
+        # stack lon_array,lat_array at the last dim, squeeze the dim
+        # ex. 40000 polygons = [40000,1, 2] after stack, then squeeze it to [40000, 2]
+        geom = geom.squeeze(axis=1)
+        geom = np.apply_along_axis(_create_point, -1, geom)
+    return GeoSeries(geom)
+
+
+# Alway returns a GeoSeries
+#def _authalic_to_geodetic(geometry, convert: bool) -> GeoSeries:
+#    if (not isinstance(geometry, GeoSeries)):
+#        geometry = GeoSeries(geometry)
+#   if (not convert):
+#        return geometry
+#    return geoseries_to_geodetic(geometry)
+
+
+# Alway returns a GeoSeries
+#def _geodetic_to_authalic(geometry, convert: bool) -> GeoSeries:
+#    if (not isinstance(geometry, GeoSeries)):
+#        geometry = GeoSeries(geometry)
+#    if (not convert):
+#        return geometry
+#    return geoseries_to_authalic(geometry)
 
 
 def z7textual_to_z7int(z7_textual_zone_id: str):
@@ -149,9 +230,9 @@ class IGEO7Provider(AbstractDGGRSProvider):
 
     def generate_hexcentroid(self, bbox, resolution):
         # ISEA7H grid at resolution, for extent of provided WGS84 rectangle into GeoDataFrame
-        bbox = _geodetic_to_authalic(bbox, self.wgs84_geodetic_conversion)[0]
+        bbox = _geodetic_to_authalic(bbox, self.wgs84_geodetic_conversion, polygon=False)[0]
         gdf = self.dggrid_instance.grid_cell_centroids_for_extent(self.dggrs, resolution, clip_geom=bbox, **self.properties.__dict__)
-        gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+        gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion, polygon=False)
         return gdf
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
@@ -160,7 +241,7 @@ class IGEO7Provider(AbstractDGGRSProvider):
                                                                     clip_subset_type=clip_subset_type,
                                                                     clip_cell_res=clip_cell_res,
                                                                     **self.properties.__dict__)
-        gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+        gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion, polygon=False)
         return gdf
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
@@ -169,11 +250,12 @@ class IGEO7Provider(AbstractDGGRSProvider):
                                                                    zone_level, clip_subset_type=clip_subset_type,
                                                                    clip_cell_res=clip_cell_res,
                                                                    **self.properties.__dict__)
+        logger.debug('authalic conversion')
         gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
         return gdf
 
     def cellid_from_centroid(self, geodf_points_wgs84, zoomlevel):
-        geodf_points_wgs84 = _geodetic_to_authalic(geodf_points_wgs84, self.wgs84_geodetic_conversion)
+        geodf_points_wgs84 = _geodetic_to_authalic(geodf_points_wgs84, self.wgs84_geodetic_conversion, polygon=False)
         gdf = self.dggrid_instance.cells_for_geo_points(geodf_points_wgs84, True, self.dggrs, zoomlevel, **self.properties.__dict__)
         gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
         return gdf
@@ -233,7 +315,9 @@ class IGEO7Provider(AbstractDGGRSProvider):
         geojson = GeoJSONPolygon if (geometry == 'zone-region') else GeoJSONPoint
         try:
             for z in zone_levels:
+                logger.debug(f' get_relative_zonelevels {z}')
                 gdf = method([cellId], z, clip_subset_type='COARSE_CELLS', clip_cell_res=base_level)
+                logger.debug(' get_relative_zonelevels converting to GeoJSON objects')
                 g = [geojson(**shapely.geometry.mapping(g)) for g in gdf['geometry'].values.tolist()]
                 children[z] = DGGRSProviderZonesElement(**{'zoneIds': gdf['name'].astype(str).values.tolist(),
                                                            'geometry': g})
