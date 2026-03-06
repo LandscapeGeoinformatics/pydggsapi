@@ -89,7 +89,7 @@ def _authalic_to_geodetic(geometry, convert: bool, polygon: bool = True) -> GeoS
     if (num_of_rows > 50000):
         lat_array = lat_array.rechunk(chunks=(lat_array.shape[0] // 10))
         logger.debug(f"Rechunk : {lat_array.chunks}")
-        lat_array = da.apply_gufunc(_ellipsoids_geodetic_to_authalic, "()->()", lat_array, vectorize=True).compute(scheduler='processes')
+        lat_array = da.apply_gufunc(_ellipsoids_authalic_to_geodetic, "()->()", lat_array, vectorize=True).compute(scheduler='processes')
     else:
         lat_array = da.apply_gufunc(_ellipsoids_authalic_to_geodetic, "()->()", lat_array, vectorize=True).compute()
     lonlat_array[:, :, 1] = lat_array.reshape(num_of_rows, -1)
@@ -123,7 +123,7 @@ def _geodetic_to_authalic(geometry, convert: bool, polygon: bool = True) -> GeoS
     num_of_rows = lonlat_array.shape[0]
     logger.debug(f"Number of row: {num_of_rows} {lonlat_array.shape}")
     lat_array = da.from_array(lonlat_array[:, :, 1]).reshape(-1)
-    if (num_of_rows > 20000):
+    if (num_of_rows > 50000):
         lat_array = lat_array.rechunk(chunks=(lat_array.shape[0] // 10))
         lat_array = da.apply_gufunc(_ellipsoids_geodetic_to_authalic, "()->()", lat_array, vectorize=True).compute(scheduler='processes')
     else:
