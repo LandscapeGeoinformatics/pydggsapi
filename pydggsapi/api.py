@@ -5,7 +5,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.openapi.utils import get_openapi
 from dotenv import load_dotenv
 
-import pydggsapi.request_example as request_example
 from pydggsapi.routers import dggs_api
 from pydggsapi.routers import tiles_api
 
