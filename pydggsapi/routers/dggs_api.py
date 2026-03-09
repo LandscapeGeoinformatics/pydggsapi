@@ -3,7 +3,7 @@
 # that means this module export a FastAPI router that gets mounted
 # in the main api.py under /dggs-api/v1-pre
 
-from typing import Annotated, Dict, List, Optional, Union
+from typing import Annotated, Dict, List, Optional, Union, cast
 from functools import cache
 import logging
 import copy
@@ -12,6 +12,7 @@ import traceback
 
 import pyproj
 from fastapi import APIRouter, HTTPException, Depends, Request, Path, Query
+from fastapi.params import Param
 from fastapi.responses import JSONResponse, FileResponse, Response
 from starlette.datastructures import URL
 from shapely.geometry import box
@@ -20,8 +21,17 @@ from shapely.ops import transform
 from pydggsapi.schemas.api.collections import Collection
 from pydggsapi.schemas.api.collection_providers import CollectionProvider
 from pydggsapi.schemas.ogc_dggs.dggrs_list import DggrsListResponse
-from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescriptionRequest, DggrsDescription
-from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoRequest, ZoneInfoResponse
+from pydggsapi.schemas.ogc_dggs.dggrs_descrption import (
+    CollectionDggrsPathRequest,
+    CollectionPathRequest,
+    DggrsPathRequest,
+    DggrsDescription,
+)
+from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import (
+    CollectionZoneInfoPathRequest,
+    ZoneInfoPathRequest,
+    ZoneInfoResponse,
+)
 from pydggsapi.schemas.ogc_dggs.dggrs_zones_data import (
     ZonesDataRequest,
     ZonesDataDggsJsonResponse,
@@ -103,8 +113,31 @@ def _import_collection_provider(providerConfig: CollectionProvider) -> AbstractC
         raise Exception(f'{__name__} {providerConfig.classname} import failed, {e}')
 
 
+# WARNING: FastAPI dependencies limitation / workaround
+#   only 1 nested-model 'Query' is supported, adding more than one 'Annotated[]'
+#   makes all queries to fail OpenAPI rendering, as they are detected as distinct 'Body'
+#   as described in https://fastapi.tiangolo.com/tutorial/body-multiple-params/
+#
+#   Planned support of multiple non-Body models:
+#   - https://github.com/fastapi/fastapi/issues/11037#issuecomment-3637254759
+#   - https://github.com/fastapi/fastapi/pull/12944
+#   - https://github.com/fastapi/fastapi/pull/12481
+#
+#   When using 'Depends(<func>)' with a dependency function containing "flat-typed" arguments (int, str, etc.)
+#   their parameters are automatically mapped to 'Path' parameters.
+#   To avoid having them detected and clashing with 'Query' or 'Body' parameters,
+#   they should only be provided when they actually apply for the corresponding route,
+#   and should **explicitly** indicate when to include/exclude them with 'Path' otherwise.
+#
+#   However, one caveat to 'Path' is that is is **required** (no default '... = None' allowed).
+#   Therefore, following "dependable" functions should use 'Annotated[..., Path(include_in_schema=False)]' and combine
+#   with an appropriate 'BaseModel' that defines the actual Path parameters (while including more metadata).
+#   If an error like 'assert not is_path_param, "Path parameters cannot have default values"' is raised, then
+#   there is a great chance that the "dependable" function over-list irrelevant/unused path parameters for that route.
+#
+
 @cache
-def _get_dggrs_provider(dggrsId: str) -> AbstractDGGRSProvider:
+def _get_dggrs_provider(dggrsId: Annotated[str, Path()]) -> AbstractDGGRSProvider:
     global dggrs_providers
     try:
         return dggrs_providers[dggrsId]
@@ -114,7 +147,11 @@ def _get_dggrs_provider(dggrsId: str) -> AbstractDGGRSProvider:
 
 
 @cache
-def _get_collection_provider(providerId: Optional[str] = None) -> dict[str, AbstractCollectionProvider]:
+def _get_collection_provider(
+    # ensure this parameter is not reported in OpenAPI schema
+    # use 'Path' (although it isn't such a parameter), to ensure it doesn't clash with Query/Body (see above warning)
+    providerId: Annotated[Optional[str], Path(include_in_schema=False)] = None,
+) -> dict[str, AbstractCollectionProvider]:
     global collection_providers
     if (providerId is None):
         return collection_providers
@@ -136,21 +173,34 @@ def _get_dggrs_description(dggrsId: str = Path(...)) -> DggrsDescription:
 
 
 @cache
-def _get_collection(collectionId: Optional[str] = None, dggrsId: Optional[str] = None) -> dict[str, Collection]:
-    global collections, dggrs_providers
+def _get_collection_info(
+    # use parameters from 'DggrsDescriptionRequest' instead
+    collectionId: Annotated[str, Path(include_in_schema=False)],
+) -> dict[str, Collection]:
+    global collections
     if (collectionId is None):
         return collections.copy()
     try:
-        c = {collectionId: copy.deepcopy(collections[collectionId])}
+        return {collectionId: copy.deepcopy(collections[collectionId])}
     except KeyError:
         logger.error(f'{__name__} : {collectionId} not found')
-        raise HTTPException(status_code=400, detail=f'{__name__}  _get_collection failed: {collectionId} not found')
+        raise HTTPException(status_code=404, detail=f'{__name__}  _get_collection failed: {collectionId} not found')
+
+
+@cache
+def _get_collection(
+    # use parameters from 'DggrsDescriptionRequest' instead
+    collectionId: Annotated[Optional[str], Path(include_in_schema=False)],
+    dggrsId: Annotated[Optional[str], Path(include_in_schema=False)],  # duplicate from '_get_dggrs_description'
+) -> dict[str, Collection]:
+    global dggrs_providers
+    c = _get_collection_info(collectionId)
     collection_dggrs = c[collectionId].collection_provider.dggrsId
     if (dggrsId is not None):
         _get_dggrs_description(dggrsId)
         if (collection_dggrs != dggrsId):
             if (collection_dggrs not in dggrs_providers[dggrsId].dggrs_conversion):
-                raise HTTPException(status_code=400, detail=f"{__name__} _get_collection failed: collection don't support {dggrsId}.")
+                raise HTTPException(status_code=400, detail=f"{__name__} _get_collection failed: collection doesn't support {dggrsId}.")
     return c
 
 
@@ -206,11 +256,16 @@ for dggrsId in dggrs.keys():
 for providerId, providerConfig in collection_provider_configs.items():
     collection_providers[providerId] = _import_collection_provider(providerConfig)
 
+###############
+# API routes
+###############
+
 
 # Landing page and conformance
 @router.get(
     "/",
-    tags=['ogc-dggs-api'],
+    summary="Landing Page",
+    tags=['OGC DGGS API', 'Core'],
     response_model=LandingPageResponse,
     response_model_exclude_unset=True,
     response_model_exclude_none=True,
@@ -255,7 +310,12 @@ def describe_collection(collection: Collection, collection_url: Union[str, URL])
     return col
 
 
-@router.get("/collections", tags=['ogc-dggs-api'], response_model=ogc_Collections)
+@router.get(
+    "/collections",
+    response_model=ogc_Collections,
+    summary="Collections Listing",
+    tags=['OGC DGGS API', 'Collection'],
+)
 async def list_collections(req: Request) -> Union[ogc_Collections, Response]:
     collectionsResponse = ogc_Collections(
         links=[
@@ -269,7 +329,7 @@ async def list_collections(req: Request) -> Union[ogc_Collections, Response]:
         collections=[]
     )
     try:
-        collections_info = _get_collection()
+        collections_info = _get_collection_info(None)
         # logger.info(f'{collections_info.keys()}')
         for collectionId, collection in collections_info.items():
             col = describe_collection(collection, f"{req.url}/{collectionId}")
@@ -284,47 +344,59 @@ async def list_collections(req: Request) -> Union[ogc_Collections, Response]:
     return collectionsResponse
 
 
-@router.get("/collections/{collectionId}", tags=['ogc-dggs-api'], response_model=ogc_CollectionDesc)
-async def list_collection_by_id(collectionId: str, req: Request, resp: Response) -> Union[ogc_CollectionDesc, Response]:
+@router.get(
+    "/collections/{collectionId}",
+    response_model=ogc_CollectionDesc,
+    summary="Collection Description",
+    tags=['OGC DGGS API', 'Collection'],
+)
+async def list_collection_by_id(
+    req: Request,
+    resp: Response,
+    col_req: Annotated[CollectionPathRequest, Depends()],
+) -> Union[ogc_CollectionDesc, Response]:
 
-    collections_info = _get_collection()
+    collections_info = _get_collection_info(None)
     # logger.info(f'{collections_info.keys()}')
-    if collectionId in collections_info.keys():
-        collection = collections_info[collectionId]
+    if col_req.collectionId in collections_info.keys():
+        collection = collections_info[col_req.collectionId]
         col = describe_collection(collection, req.url)
         for link in col.links:
             resp.headers.append("Link", link.header())
         return col
     else:
-        raise HTTPException(status_code=404, detail=f'{__name__} {collectionId} not found')
+        raise HTTPException(status_code=404, detail=f'{__name__} {col_req.collectionId} not found')
 
 
 @router.get(
     "/collections/{collectionId}/schema",
-    tags=['ogc-dggs-api'],
     response_class=JsonSchemaResponse,  # override Content-Type response header
     response_model=CollectionQueryables,
+    tags=['OGC DGGS API', 'Collection'],
+    summary="Collection Schema Properties",
 )
 async def get_collection_schema_request(
     req: Request,
-    collection: Dict[str, Collection] = Depends(_get_collection),
+    col_req: Annotated[CollectionPathRequest, Depends()],  # noqa: OpenAPI path parameter documentation
+    collections: Dict[str, Collection] = Depends(_get_collection_info),
 ) -> Union[CollectionQueryables, JsonSchemaResponse]:
-    schema = await get_collection_queryables_request(req, collection)
+    schema = await get_collection_queryables_request(req, collections)
     return schema
 
 
 @router.get(
     "/collections/{collectionId}/queryables",
-    tags=['ogc-dggs-api'],
+    summary="Collection Queryables Properties",
+    tags=['OGC DGGS API', 'Collection'],
     response_class=JsonSchemaResponse,  # override Content-Type response header
     response_model=CollectionQueryables,
 )
 async def get_collection_queryables_request(
     req: Request,
-    collection: Dict[str, Collection] = Depends(_get_collection),
+    collections: Dict[str, Collection] = Depends(_get_collection_info),
 ) -> Union[CollectionQueryables, JsonSchemaResponse]:
 
-    _, collection = collection.copy().popitem()
+    _, collection = collections.copy().popitem()
     if (collection is None):
         # Error, should not be None, it should be handled by _get_collection
         raise HTTPException(status_code=404, detail=f'{__name__} collection is None')
@@ -340,7 +412,7 @@ async def get_collection_queryables_request(
     return queryables
 
 
-@router.get("/conformance", tags=['ogc-dggs-api'])
+@router.get("/conformance", summary="OGC API Conformance Listing", tags=['OGC DGGS API', 'Core'])
 async def conformance(conformance_classes=Depends(get_conformance_classes)) -> JSONResponse:
     return JSONResponse(content={'conformsTo': conformance_classes})
 
@@ -348,19 +420,37 @@ async def conformance(conformance_classes=Depends(get_conformance_classes)) -> J
 # Core conformance class
 
 # dggrs-list
-@router.get("/dggs", response_model=DggrsListResponse, tags=['ogc-dggs-api'])
-@router.get("/collections/{collectionId}/dggs", response_model=DggrsListResponse, tags=['ogc-dggs-api'])
+@router.get(
+    "/dggs",
+    response_model=DggrsListResponse,
+    summary="DGGS Listing",
+    tags=['OGC DGGS API', 'DGGRS'],
+)
 async def support_dggs(
-    req: Request, collectionId: Optional[str] = None,
-    collection: Dict[str, Collection] = Depends(_get_collection),
+    req: Request,
+) -> Union[DggrsListResponse, Response]:
+    collections = _get_collection_info(None)
+    return await collection_support_dggs(req, None, collections=collections)
+
+
+@router.get(
+    "/collections/{collectionId}/dggs",
+    response_model=DggrsListResponse,
+    summary="DGGS Listing available for a specific Collection",
+    tags=['OGC DGGS API', 'DGGRS'],
+)
+async def collection_support_dggs(
+    req: Request,
+    col_req: Annotated[CollectionPathRequest, Depends()] = None,
+    collections: Dict[str, Collection] = Depends(_get_collection_info),
 ) -> Union[DggrsListResponse, Response]:
 
     logger.info(f'{__name__} called.')
     global dggrs, dggrs_providers
     selected_dggrs = copy.deepcopy(dggrs)
     try:
-        if (collectionId is not None):
-            collection = collection[collectionId]
+        if (col_req and col_req.collectionId is not None):
+            collection = collections[col_req.collectionId]
             dggrsId = collection.collection_provider.dggrsId
             selected_dggrs = {dggrsId: selected_dggrs[dggrsId]}
             ref_max = selected_dggrs[dggrsId].maxRefinementLevel = collection.collection_provider.max_refinement_level
@@ -377,18 +467,40 @@ async def support_dggs(
 
 
 # dggrs description
-@router.get("/dggs/{dggrsId}", response_model=DggrsDescription, tags=['ogc-dggs-api'])
-@router.get("/collections/{collectionId}/dggs/{dggrsId}", response_model=DggrsDescription, tags=['ogc-dggs-api'])
+@router.get(
+    "/dggs/{dggrsId}",
+    response_model=DggrsDescription,
+    summary="DGGS Description",
+    tags=['OGC DGGS API', 'DGGRS'],
+)
 async def dggrs_description(
-    req: Request, dggrs_req: DggrsDescriptionRequest = Depends(),
-    dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
-    collection: Dict[str, Collection] = Depends(_get_collection),
+    req: Request,
+    dggrs_req: Annotated[DggrsPathRequest, Depends()],
+    dggrs: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider=Depends(_get_dggrs_provider)
 ) -> Union[DggrsDescription, Response]:
-    dggrs_description = dggrs_description.model_copy(deep=True)
+    collections = _get_collection_info(None)
+    return await collection_dggrs_description(req, dggrs_req, dggrs, collections, dggrs_provider)
+
+
+@router.get(
+    "/collections/{collectionId}/dggs/{dggrsId}",
+    response_model=DggrsDescription,
+    summary="DGGS Description available for a specific Collection",
+    tags=['OGC DGGS API', 'DGGRS'],
+)
+async def collection_dggrs_description(
+    req: Request,
+    dggrs_req: Annotated[CollectionDggrsPathRequest, Depends()],
+    dggrs: Annotated[DggrsDescription, Depends(_get_dggrs_description)],
+    collections: Annotated[Dict[str, Collection], Depends(_get_collection)],
+    dggrs_provider=Depends(_get_dggrs_provider)
+) -> Union[DggrsDescription, Response]:
+    dggrs_description = dggrs.model_copy(deep=True)
     current_url = str(req.url)
-    if (dggrs_req.collectionId is not None):
-        collection = collection[dggrs_req.collectionId]
+    col_id = getattr(dggrs_req, "collectionId", None)
+    if (col_id is not None):
+        collection = collections[col_id]
         dggrs_description.maxRefinementLevel = collection.collection_provider.max_refinement_level
         # update the maxRefinementLevel if it belongs to dggrs conversion
         if (dggrs_req.dggrsId != collection.collection_provider.dggrsId
@@ -398,17 +510,39 @@ async def dggrs_description(
 
 
 # zone-info
-@router.get("/dggs/{dggrsId}/zones/{zoneId}",  response_model=ZoneInfoResponse, tags=['ogc-dggs-api'])
-@router.get("/collections/{collectionId}/dggs/{dggrsId}/zones/{zoneId}", response_model=ZoneInfoResponse, tags=['ogc-dggs-api'])
+@router.get(
+    "/dggs/{dggrsId}/zones/{zoneId}",
+    response_model=ZoneInfoResponse,
+    summary="DGGS Zone Information Query across Collections",
+    tags=['OGC DGGS API', 'Zone Query'],
+)
 async def dggrs_zone_info(
-    req: Request, zoneinfoReq: ZoneInfoRequest = Depends(),
+    req: Request,
+    zoneinfoReq: Annotated[ZoneInfoPathRequest, Depends()],
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
-    collection: Dict[str, Collection] = Depends(_get_collection),
+    collection_provider=Depends(_get_collection_provider),
+) -> Union[ZoneInfoResponse, Response]:
+    collections = _get_collection_info(None)
+    return await collection_dggrs_zone_info(req, zoneinfoReq, dggrs_description, dggrs_provider, collections, collection_provider)
+
+
+@router.get(
+    "/collections/{collectionId}/dggs/{dggrsId}/zones/{zoneId}",
+    response_model=ZoneInfoResponse,
+    summary="DGGS Zone Information Query for a specific Collection",
+    tags=['OGC DGGS API', 'Zone Query'],
+)
+async def collection_dggrs_zone_info(
+    req: Request,
+    zoneinfoReq: Annotated[CollectionZoneInfoPathRequest, Depends()],
+    dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
+    dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
+    collections: Dict[str, Collection] = Depends(_get_collection),
     collection_provider: Dict[str, AbstractCollectionProvider] = Depends(_get_collection_provider),
 ) -> Union[ZoneInfoResponse, Response]:
     try:
-        info = query_zone_info(zoneinfoReq, req.url, dggrs_description, dggrs_provider, collection, collection_provider)
+        info = query_zone_info(zoneinfoReq, req.url, dggrs_description, dggrs_provider, collections, collection_provider)
     except ValueError as e:
         logger.error(f'{__name__} query zone info fail: {e}')
         raise HTTPException(status_code=400, detail=f'{__name__} query zone info fail: {e}')
@@ -422,16 +556,39 @@ async def dggrs_zone_info(
 
 # Zone query conformance class
 # Only using the existence of `datetime` query to determine if the query belongs to temporal or non-temporal.
-@router.get("/dggs/{dggrsId}/zones", response_model=Union[ZonesResponse, ZonesGeoJson], tags=['ogc-dggs-api'])
-@router.get("/collections/{collectionId}/dggs/{dggrsId}/zones", response_model=Union[ZonesResponse, ZonesGeoJson], tags=['ogc-dggs-api'])
+
+@router.get(
+    "/dggs/{dggrsId}/zones",
+    response_model=Union[ZonesResponse, ZonesGeoJson],
+    summary="DGGS Zones Listing across Collections",
+    tags=['OGC DGGS API', 'Zone Query'],
+)
 async def list_dggrs_zones(
     req: Request,
-    dggrsDesc: Annotated[DggrsDescriptionRequest, Path()],
+    dggrs_req: Annotated[DggrsPathRequest, Depends()],  # noqa: OpenAPI parameters definition only
     zonesReq: Annotated[ZonesRequest, Query()],
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
-    collection: Dict[str, Collection] = Depends(_get_collection),
-    collection_provider: Dict[str, AbstractCollectionProvider] = Depends(_get_collection_provider),
+    collection_provider=Depends(_get_collection_provider),
+) -> Union[ZonesResponse, ZonesGeoJson, Response]:
+    collections = _get_collection_info(None)
+    return await collection_list_dggrs_zones(req, dggrs_req, zonesReq, dggrs_description, dggrs_provider, collections, collection_provider)
+
+
+@router.get(
+    "/collections/{collectionId}/dggs/{dggrsId}/zones",
+    response_model=Union[ZonesResponse, ZonesGeoJson],
+    summary="DGGS Zones Listing for a specific Collection",
+    tags=['OGC DGGS API', 'Zone Query'],
+)
+async def collection_list_dggrs_zones(
+    req: Request,
+    dggrs_req: Annotated[CollectionDggrsPathRequest, Depends()],  # noqa: OpenAPI parameters definition only
+    zonesReq: Annotated[ZonesRequest, Query()],
+    dggrs_description: Annotated[DggrsDescription, Depends(_get_dggrs_description)],
+    dggrs_provider: Annotated[AbstractDGGRSProvider, Depends(_get_dggrs_provider)],
+    collections: Annotated[Dict[str, Collection], Depends(_get_collection)],
+    collection_provider: Annotated[Dict[str, AbstractCollectionProvider], Depends(_get_collection_provider)],
 ) -> Union[ZonesResponse, ZonesGeoJson, Response]:
 
     returntype = _get_return_type(req, zone_query_support_returntype, zone_query_support_formats, 'application/json')
@@ -453,16 +610,16 @@ async def list_dggrs_zones(
             logger.error(f'{__name__} query zones list, parent zone refinement level ({parent_level}) is finer or equal to the requested zone-level({zone_level}).')
             raise HTTPException(status_code=400, detail=f"query zones list, parent zone refinement level ({parent_level}) is finer or equal to the requested zone-level({zone_level}).")
     skip_collection = []
-    for k, v in collection.items():
+    for k, v in collections.items():
         max_ = v.collection_provider.max_refinement_level
         min_ = v.collection_provider.min_refinement_level
         # if the dggrsId is not the native dggrs supported by the collection,
         # check if the native dggrs supports conversion
-        if (dggrsDesc.dggrsId != v.collection_provider.dggrsId
+        if (dggrs_description.id != v.collection_provider.dggrsId
                 and v.collection_provider.dggrsId not in dggrs_provider.dggrs_conversion):
             skip_collection.append(k)
             continue
-        if (dggrsDesc.dggrsId != v.collection_provider.dggrsId
+        if (dggrs_description.id != v.collection_provider.dggrsId
                 and v.collection_provider.dggrsId in dggrs_provider.dggrs_conversion):
             max_ = v.collection_provider.max_refinement_level + dggrs_provider.dggrs_conversion[v.collection_provider.dggrsId].zonelevel_offset
         if (zone_level < min_ or zone_level > max_):
@@ -479,21 +636,21 @@ async def list_dggrs_zones(
         if (not include_datetime and cp.datasources[v.collection_provider.datasource_id].datetime_col is not None):
             # skip non-temporal collections
             skip_collection.append(k)
-    if (len(collection) == len(skip_collection)):
+    if (len(collections) == len(skip_collection)):
         raise HTTPException(status_code=400, detail=f"f'{__name__} query zones list, zone level {zone_level} is over refinement for all collections")
-    filtered_collections = {k: v for k, v in collection.items() if (k not in skip_collection)}
+    filtered_collections = {k: v for k, v in collections.items() if (k not in skip_collection)}
     if (bbox is not None):
         try:
             bbox = box(*bbox)
             bbox_crs = zonesReq.bbox_crs if (zonesReq.bbox_crs is not None) else "wgs84"
             if (bbox_crs != 'wgs84'):
-                logger.info(f'{__name__} query zones list {dggrsDesc.dggrsId}, original bbox: {bbox}')
+                logger.info(f'{__name__} query zones list {dggrs_description.id}, original bbox: {bbox}')
                 project = pyproj.Transformer.from_crs(bbox_crs, "wgs84", always_xy=True).transform
                 bbox = transform(project, bbox)
-                logger.info(f'{__name__} query zones list {dggrsDesc.dggrsId}, transformed bbox: {bbox}')
+                logger.info(f'{__name__} query zones list {dggrs_description.id}, transformed bbox: {bbox}')
         except Exception as e:
-            logger.error(f'{__name__} query zones list, bbox converstion failed : {e}')
-            raise HTTPException(status_code=400, detail=f"{__name__} query zones list, bbox converstion failed : {e}")
+            logger.error(f'{__name__} query zones list, bbox conversion failed : {e}')
+            raise HTTPException(status_code=400, detail=f"{__name__} query zones list, bbox conversion failed : {e}")
     try:
         result = query_zones_list(bbox, zone_level, limit, dggrs_description, dggrs_provider, filtered_collections, collection_provider,
                                   compact_zone, zonesReq.parent_zone, returntype, returngeometry, filter, include_datetime)
@@ -510,16 +667,38 @@ async def list_dggrs_zones(
 
 # Data-retrieval conformance class
 # Only using the existence of `datetime` query to determine if the query belongs to temporal or non-temporal.
-@router.get("/dggs/{dggrsId}/zones/{zoneId}/data", response_model=None, tags=['ogc-dggs-api'])
-@router.get("/collections/{collectionId}/dggs/{dggrsId}/zones/{zoneId}/data", response_model=None, tags=['ogc-dggs-api'])
+
+@router.get(
+    "/dggs/{dggrsId}/zones/{zoneId}/data",
+    response_model=None,
+    summary="DGGS Zones Data Retrieval across Collections",
+    tags=['OGC DGGS API', 'Zone Data'],
+)
 async def dggrs_zones_data(
     req: Request,
-    zonedataReq: Annotated[ZoneInfoRequest, Path()],
+    zonedataReq: Annotated[ZoneInfoPathRequest, Depends()],
     zonedataQuery: Annotated[ZonesDataRequest, Query()],
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
-    collection: Dict[str, Collection] = Depends(_get_collection),
-    collection_provider: Dict[str, AbstractCollectionProvider] = Depends(_get_collection_provider),
+) -> ZonesDataDggsJsonResponse | FileResponse | Response:
+    collections = _get_collection_info(None)
+    return await collection_dggrs_zones_data(req, zonedataReq, zonedataQuery, dggrs_description, dggrs_provider, collections)
+
+
+@router.get(
+    "/collections/{collectionId}/dggs/{dggrsId}/zones/{zoneId}/data",
+    response_model=None,
+    summary="DGGS Zones Data Retrieval for a specific Collection",
+    tags=['OGC DGGS API', 'Zone Data'],
+)
+async def collection_dggrs_zones_data(
+    req: Request,
+    zonedataReq: Annotated[CollectionZoneInfoPathRequest, Depends()],
+    zonedataQuery: Annotated[ZonesDataRequest, Query()],
+    dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
+    dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
+    collections: Dict[str, Collection] = Depends(_get_collection),
+    collection_provider=Depends(_get_collection_provider),
 ) -> ZonesDataDggsJsonResponse | FileResponse | Response:
     returntype = _get_return_type(req, zone_data_support_returntype, zone_data_support_formats, 'application/json')
     zoneId = zonedataReq.zoneId
@@ -528,8 +707,8 @@ async def dggrs_zones_data(
     returngeometry = None if (returntype != 'application/geo+json') else returngeometry
     filter = zonedataQuery.filter
     include_datetime = True if (zonedataQuery.datetime is not None) else False
-    include_properties = zonedataQuery.properties
-    exclude_properties = zonedataQuery.exclude_properties
+    include_properties = cast(Optional[list[str]], zonedataQuery.properties)
+    exclude_properties = cast(Optional[list[str]], zonedataQuery.exclude_properties)
     # prepare zone levels from zoneId + depth
     # The first element of zone_level will be the zoneId's level, follow by the required relative depth (zoneId's level + d)
     try:
@@ -539,7 +718,7 @@ async def dggrs_zones_data(
         raise HTTPException(status_code=500, detail=f'{__name__} query zone data {zonedataReq.dggrsId}, zone id {zoneId} get zone level error: {e}')
     relative_levels = [base_level + d for d in depth]
     skip_collection = []
-    for k, v in collection.items():
+    for k, v in collections.items():
         max_ = v.collection_provider.max_refinement_level
         # if the dggrsId is not the native dggrs supported by the collection,
         # check if the native dggrs supports conversion
@@ -565,10 +744,10 @@ async def dggrs_zones_data(
         if (not include_datetime and cp.datasources[v.collection_provider.datasource_id].datetime_col):
             # skip non-temporal collections
             skip_collection.append(k)
-    if (len(collection) == len(skip_collection)):
+    if (len(collections) == len(skip_collection)):
         raise HTTPException(status_code=400,
                             detail=f"f'{__name__} zone id {zoneId} with relative depth: {depth} is over refinement for all collections")
-    filtered_collections = {k: v for k, v in collection.items() if (k not in skip_collection)}
+    filtered_collections = {k: v for k, v in collections.items() if (k not in skip_collection)}
     try:
         result = query_zone_data(req, zoneId, base_level, relative_levels, dggrs_description,
                                  dggrs_provider, filtered_collections, collection_providers, returntype,

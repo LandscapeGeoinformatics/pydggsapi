@@ -40,6 +40,7 @@ app = FastAPI(
     docs_url=docs_url,
     redoc_url=redoc_url,
     swagger_ui_oauth2_redirect_url=swagger_ui_oauth2_redirect_url,
+    swagger_ui_parameters={"operationsSorter": "alpha"}
 )
 # initialize logging for Fastapi
 
@@ -67,16 +68,13 @@ app.include_router(dggs_api.router, prefix=dggs_prefix)
 app.include_router(tiles_api.router, prefix=tiles_prefix)
 
 
-
-# set up a landing page GET /
-
 ######################################################
 # openapi
 # https://swagger.io/docs/specification/describing-parameters/#header-parameters
 # https://www.linode.com/docs/guides/documenting-a-fastapi-app-with-openapi/
 ######################################################
 
-def my_schema():
+def extended_openapi_schema():
     openapi_schema = get_openapi(
         title="pydggsapi: A python FastAPI OGC DGGS API implementation",
         version="0.1.5",
@@ -85,14 +83,13 @@ def my_schema():
     )
 
     openapi_schema["info"] = {
-        "title" : "pydggsapi: A python FastAPI OGC DGGS API implementation",
-        "version" : "0.1.5",
-        "description" : "A python FastAPI OGC DGGS API implementation",
-        "termsOfService": "https://creativecommons.org/licenses/by/4.0/",
+        "title": "pydggsapi: A python FastAPI OGC DGGS API implementation",
+        "version": "0.1.5",
+        "description": "A python FastAPI OGC DGGS API implementation",
         "contact": api_contact,
         "license": {
-            "name": "AGPL-3.0",
-            "url": "https://www.gnu.org/licenses/agpl-3.0.en.html"
+            "name": "Apache-2.0",
+            "url": "https://spdx.org/licenses/Apache-2.0.html"
         }
     }
 
@@ -100,4 +97,4 @@ def my_schema():
     return app.openapi_schema
 
 
-app.openapi = my_schema
+app.openapi = extended_openapi_schema
