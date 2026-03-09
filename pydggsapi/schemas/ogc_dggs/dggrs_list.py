@@ -17,8 +17,8 @@ class DggrsItem(BaseModel):
         ...,
         description='Title of this Discrete Global Grid System, normally used for display to a human',
     )
-    uri: Optional[AnyUrl] = Field(
-        None,
+    uri: Union[AnyUrl, str] = Field(
+        ...,
         description='Identifier for this Discrete Global Grid Reference System registered with an authority.',
     )
     links: List[Link] = Field(
@@ -28,5 +28,5 @@ class DggrsItem(BaseModel):
 
 
 class DggrsListResponse(BaseModel):
-    links: List[Link]
     dggrs: List[DggrsItem]
+    links: List[Link]

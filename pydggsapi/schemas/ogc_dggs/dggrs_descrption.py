@@ -41,8 +41,8 @@ class DggrsDescription(BaseModel):
         None,
         description='Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this Discrete Global Grid Reference System',
     )
-    uri: Optional[AnyUrl] = Field(
-        None,
+    uri: Union[AnyUrl, str] = Field(  # can be a URI or a compact URI (CURIE)
+        ...,
         description='Identifier for this Discrete Global Grid Reference System registered with an authority.',
     )
     crs: Optional[CrsModel] = None
