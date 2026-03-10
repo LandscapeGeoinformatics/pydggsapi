@@ -22,13 +22,15 @@ def get_conformance_classes():
         "https://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections",
         "https://www.opengis.net/spec/ogcapi-common-2/1.0/conf/umd-collection",
         "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/queryables",
-        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/returnables-and-receivables"
-        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/schemas"
+        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/returnables-and-receivables",
+        "https://www.opengis.net/spec/ogcapi-common-3/1.0/conf/schemas",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/core",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/root-dggs",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/collection-dggs",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-query",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-query-cql2-filter",
+        # "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-unit64",  # application/x-binary zone-list
+        "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-geojson",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-custom-depths",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-retrieval",
         "https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-cql2-filter",
@@ -86,13 +88,20 @@ def get_dggrs_descriptions() -> Dict[str, DggrsDescription]:
             max_dggrs[cp.dggrsId] = cp.max_refinement_level
     for dggrs in dggrs_indexes:
         dggrsid, dggrs_config = dggrs.popitem()
-        self_link = Link(**{'href': '', 'rel': 'self', 'title': 'DGGRS description link'})
-        dggrs_model_link = Link(**{
-            'href': dggrs_config['definition_link'],
-            'rel': '[ogc-rel:dggrs-definition]',
-            'title': 'DGGRS definition',
-        })
+        dggrs_def = dggrs_config['definition_link'] or f'[ogc-dggrs:{dggrsid}]'
+        self_link = Link(
+            href='',
+            type='application/json',
+            rel='self',
+            title='DGGRS description link',
+        )
+        dggrs_model_link = Link(
+            href=dggrs_def,
+            rel='[ogc-rel:dggrs-definition]',
+            title='DGGRS definition',
+        )
         dggrs_config['id'] = dggrsid
+        dggrs_config['uri'] = dggrs_def
         dggrs_config['maxRefinementLevel'] = max_dggrs.get(dggrsid, 32)
         dggrs_config['links'] = [self_link, dggrs_model_link]
         del dggrs_config['definition_link']

@@ -1,7 +1,7 @@
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import Link, LinkTemplate, LandingPageResponse
 from pydggsapi.schemas.ogc_dggs.dggrs_list import DggrsItem, DggrsListResponse
 from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescription
-from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoRequest, ZoneInfoResponse
+from pydggsapi.schemas.ogc_dggs.dggrs_zones_info import ZoneInfoPathRequest, ZoneInfoResponse
 from pydggsapi.schemas.api.collections import Collection
 from pydggsapi.schemas.ogc_collections.queryables import CollectionQueryables, Property
 from pydggsapi.schemas.common_geojson import GeoJSONPolygon, GeoJSONPoint
@@ -44,7 +44,6 @@ def landingpage(current_url: URL, app: FastAPI) -> LandingPageResponse:
 
 
 def query_support_dggs(current_url, selected_dggrs: Dict[str, DggrsDescription]) -> DggrsListResponse:
-    # DGGRID_ISEA7H_seqnum
     logger.debug(f'{__name__} support dggs')
     support_dggrs = []
     base_url = str(current_url)
@@ -52,37 +51,54 @@ def query_support_dggs(current_url, selected_dggrs: Dict[str, DggrsDescription])
         for i, link in enumerate(v.links):
             if link.rel == 'self':
                 v.links[i].href = f'{base_url}/{k}'
-        support_dggrs.append(DggrsItem(id=k, title=v.title, links=v.links))
+        support_dggrs.append(DggrsItem(**v.model_dump()))
     logger.debug(f'{__name__} support dggs ({len(support_dggrs)})')
     dggs_url = urljoin(base_url, './dggs')
     links = [
-        Link(href=base_url, rel='self', title='Current page'),
-        Link(href=dggs_url, rel='[ogc-rel:dggrs-list]', title='DGGS API landing page'),
+        Link(href=base_url, type='application/json', rel='self', title='Current page'),
+        Link(href=dggs_url, type='application/json', rel='[ogc-rel:dggrs-list]', title='DGGS API landing page'),
     ]
     if '/collections/' in base_url:
         col_url = base_url.rsplit('/', 1)[0]
         links.append(
-            Link(href=col_url, rel='[ogc-rel:geodata]', title='DGGS Collection details')
+            Link(href=col_url, type='application/json', rel='[ogc-rel:geodata]', title='Collection geospatial details')
         )
     return DggrsListResponse(links=links, dggrs=support_dggrs)
 
 
 def query_dggrs_definition(current_url, dggrs_description: DggrsDescription):
     logger.debug(f'{__name__} query dggrs model {dggrs_description.id}')
+    dggrs_uri = None
     for i, link in enumerate(dggrs_description.links):
         if link.rel == 'self':
             dggrs_description.links[i].href = str(current_url)
-    zone_query_link = Link(href=str(current_url) + '/zones', rel='[ogc-rel:dggrs-zone-query]', title='Dggrs zone-query link')
-    zone_data_link = LinkTemplate(uriTemplate=str(current_url) + '/zones/{zoneId}/data', rel='[ogc-rel:dggrs-zone-data]',
-                                     title='Dggrs zone-query link')
+        if link.rel == '[ogc-rel:dggrs-definition]':
+            dggrs_uri = link.href
+    zone_query_link = Link(
+        href=f'{current_url}/zones',
+        rel='[ogc-rel:dggrs-zone-query]',
+        title='DGGRS zone-query link',
+    )
+    zone_info_link = LinkTemplate(
+        uriTemplate=f'{current_url}/zones/{{zoneId}}',
+        type='application/json',
+        rel='[ogc-rel:dggrs-zone-info]',
+        title=f'DGGRS zone information for a particular {dggrs_description.id} zone',
+    )
+    zone_data_link = LinkTemplate(
+        uriTemplate=f'{current_url}/zones/{{zoneId}}/data',
+        rel='[ogc-rel:dggrs-zone-data]',
+        title=f'Data retrieval for a particular {dggrs_description.id} zone',
+    )
+    dggrs_description.uri = dggrs_uri or f'[ogc-dggrs:{dggrs_description.id}]'
     dggrs_description.links.append(zone_query_link)
-    dggrs_description.linkTemplates = [zone_data_link]
+    dggrs_description.linkTemplates = [zone_info_link, zone_data_link]
     logger.debug(f'{__name__} query dggrs model: {pprint(dggrs_description)}')
     return dggrs_description
 
 
 def query_zone_info(
-    zoneinfoReq: ZoneInfoRequest,
+    zoneinfoReq: ZoneInfoPathRequest,
     current_url: URL,
     dggs_info: DggrsDescription,
     dggrs_provider: AbstractDGGRSProvider,

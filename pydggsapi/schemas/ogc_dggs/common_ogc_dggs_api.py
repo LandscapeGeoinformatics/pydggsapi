@@ -15,7 +15,7 @@ class LinkBase(CommonBaseModel):
         description='The type or semantics of the relation.',
         examples=['alternate'],
     )
-    type: Optional[str] = Field(
+    type: Annotated[Optional[str], OmitIfNone] = Field(
         None,
         description='A hint indicating what the media type of the result of dereferencing the link should be.',
         examples=['application/geo+json'],
@@ -64,7 +64,7 @@ class LinkTemplate(LinkBase):
         ),
         examples=['http://data.example.com/buildings/{featureId}'],
     )
-    varBase: Optional[str] = Field(
+    varBase: Annotated[Optional[str], OmitIfNone] = Field(
         None,
         description='A base path to retrieve semantic information about the variables used in URL template.',
         examples=['/ogcapi/vars/'],
