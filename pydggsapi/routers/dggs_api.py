@@ -569,9 +569,9 @@ async def list_dggrs_zones(
     zonesReq: Annotated[ZonesRequest, Query()],
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
-    collection_provider=Depends(_get_collection_provider),
 ) -> Union[ZonesResponse, ZonesGeoJson, Response]:
     collections = _get_collection_info(None)
+    collection_provider = _get_collection_provider(None)
     return await collection_list_dggrs_zones(req, dggrs_req, zonesReq, dggrs_description, dggrs_provider, collections, collection_provider)
 
 
@@ -626,16 +626,6 @@ async def collection_list_dggrs_zones(
             logger.warning(f'{__name__} query zones list, zone level {zone_level} is not within the {k} refinement level: {min_} {max_}')
             skip_collection.append(k)
             continue
-        cp = collection_provider[v.collection_provider.providerId]
-        # if the collection consists of datetime_col or timeStamp, then it is a temporal collection
-        is_temporalcollection = (cp.datasources[v.collection_provider.datasource_id].datetime_col is not None or v.timestamp is not None)
-        if (include_datetime and not is_temporalcollection):
-            # skip non-temporal collections
-            skip_collection.append(k)
-        # For a non-temporal query, only filter out collections that have a native temporal dimension
-        if (not include_datetime and cp.datasources[v.collection_provider.datasource_id].datetime_col is not None):
-            # skip non-temporal collections
-            skip_collection.append(k)
     if (len(collections) == len(skip_collection)):
         raise HTTPException(status_code=400, detail=f"f'{__name__} query zones list, zone level {zone_level} is over refinement for all collections")
     filtered_collections = {k: v for k, v in collections.items() if (k not in skip_collection)}
@@ -682,7 +672,9 @@ async def dggrs_zones_data(
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
 ) -> ZonesDataDggsJsonResponse | FileResponse | Response:
     collections = _get_collection_info(None)
-    return await collection_dggrs_zones_data(req, zonedataReq, zonedataQuery, dggrs_description, dggrs_provider, collections)
+    collection_provider = _get_collection_provider(None)
+    return await collection_dggrs_zones_data(req, zonedataReq, zonedataQuery, dggrs_description,
+                                             dggrs_provider, collections, collection_provider)
 
 
 @router.get(
@@ -698,7 +690,7 @@ async def collection_dggrs_zones_data(
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
     collections: Dict[str, Collection] = Depends(_get_collection),
-    collection_provider=Depends(_get_collection_provider),
+    collection_provider: Dict[str, CollectionProvider] = Depends(_get_collection_provider),
 ) -> ZonesDataDggsJsonResponse | FileResponse | Response:
     returntype = _get_return_type(req, zone_data_support_returntype, zone_data_support_formats, 'application/json')
     zoneId = zonedataReq.zoneId
@@ -735,15 +727,16 @@ async def collection_dggrs_zones_data(
             skip_collection.append(k)
             logger.warning(f'{__name__} query zone data {zonedataReq.dggrsId}, zone id {zoneId} with zone depth: {relative_levels} not supported')
             continue
-        cp = collection_provider[v.collection_provider.providerId]
-        is_temporalcollection = (cp.datasources[v.collection_provider.datasource_id].datetime_col is not None or v.timestamp is not None)
-        if (include_datetime and not is_temporalcollection):
-            # skip non-temporal collections
-            skip_collection.append(k)
-        # For a non-temporal query, only filter out collections that have a native temporal dimension
-        if (not include_datetime and cp.datasources[v.collection_provider.datasource_id].datetime_col):
-            # skip non-temporal collections
-            skip_collection.append(k)
+        if ("/collections" not in req.url.path.lower()):
+            cp = collection_provider[v.collection_provider.providerId]
+            is_temporalcollection = (cp.datasources[v.collection_provider.datasource_id].datetime_col is not None or v.timestamp is not None)
+            if (include_datetime and not is_temporalcollection):
+                # skip non-temporal collections
+                skip_collection.append(k)
+            # For a non-temporal query, only filter out collections that have a native temporal dimension
+            if (not include_datetime and cp.datasources[v.collection_provider.datasource_id].datetime_col):
+                # skip non-temporal collections
+                skip_collection.append(k)
     if (len(collections) == len(skip_collection)):
         raise HTTPException(status_code=400,
                             detail=f"f'{__name__} zone id {zoneId} with relative depth: {depth} is over refinement for all collections")
