@@ -569,9 +569,9 @@ async def list_dggrs_zones(
     zonesReq: Annotated[ZonesRequest, Query()],
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
-    collection_provider=Depends(_get_collection_provider),
 ) -> Union[ZonesResponse, ZonesGeoJson, Response]:
     collections = _get_collection_info(None)
+    collection_provider = _get_collection_provider(None)
     return await collection_list_dggrs_zones(req, dggrs_req, zonesReq, dggrs_description, dggrs_provider, collections, collection_provider)
 
 
@@ -626,7 +626,7 @@ async def collection_list_dggrs_zones(
             logger.warning(f'{__name__} query zones list, zone level {zone_level} is not within the {k} refinement level: {min_} {max_}')
             skip_collection.append(k)
             continue
-    if (len(collection) == len(skip_collection)):
+    if (len(collections) == len(skip_collection)):
         raise HTTPException(status_code=400, detail=f"f'{__name__} query zones list, zone level {zone_level} is over refinement for all collections")
     filtered_collections = {k: v for k, v in collections.items() if (k not in skip_collection)}
     if (bbox is not None):
@@ -672,7 +672,9 @@ async def dggrs_zones_data(
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
 ) -> ZonesDataDggsJsonResponse | FileResponse | Response:
     collections = _get_collection_info(None)
-    return await collection_dggrs_zones_data(req, zonedataReq, zonedataQuery, dggrs_description, dggrs_provider, collections)
+    collection_provider = _get_collection_provider(None)
+    return await collection_dggrs_zones_data(req, zonedataReq, zonedataQuery, dggrs_description,
+                                             dggrs_provider, collections, collection_provider)
 
 
 @router.get(
@@ -688,7 +690,7 @@ async def collection_dggrs_zones_data(
     dggrs_description: DggrsDescription = Depends(_get_dggrs_description),
     dggrs_provider: AbstractDGGRSProvider = Depends(_get_dggrs_provider),
     collections: Dict[str, Collection] = Depends(_get_collection),
-    collection_provider=Depends(_get_collection_provider),
+    collection_provider: Dict[str, CollectionProvider] = Depends(_get_collection_provider),
 ) -> ZonesDataDggsJsonResponse | FileResponse | Response:
     returntype = _get_return_type(req, zone_data_support_returntype, zone_data_support_formats, 'application/json')
     zoneId = zonedataReq.zoneId

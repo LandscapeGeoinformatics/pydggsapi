@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel, Feature, ReturnGeometryTypes
+from pydggsapi.schemas.common_basemodel import CommonBaseModel
 
 from fastapi import Depends, Query
 from fastapi.exceptions import HTTPException
@@ -64,8 +65,8 @@ def datetime_cql_validation(datetime: str | None, cql_filter: str | None) -> Tup
     return datetime, cql_filter
 
 
-class ZonesRequest(BaseModel):
-    zone_level: Optional[conint(ge=0)] = Field(
+class ZonesRequest(CommonBaseModel):
+    zone_level: int = Field(
         default=None,
         alias="zone-level",
         description=(
@@ -74,7 +75,7 @@ class ZonesRequest(BaseModel):
             "If not specified, this defaults to the most detailed zone that the system is able to return for the specific request."
         )
     )
-    compact_zone: Optional[bool] = Field(
+    compact_zone: bool = Field(
         default=True,
         alias="compact-zone",
         description=(
