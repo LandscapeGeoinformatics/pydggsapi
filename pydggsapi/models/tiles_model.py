@@ -1,5 +1,4 @@
 from pydantic import ValidationError
-# from pydggsapi.models.hytruck_model import querySuitability, queryModelledWeightsVariables
 from pydggsapi.schemas.tiles.tiles import TilesFeatures, TilesJSON, VectorLayer
 import pyproj
 from shapely.geometry import box
