@@ -85,14 +85,14 @@
     "1": {
       "clickhouse": {
         "classname": "clickhouse_collection_provider.ClickhouseCollectionProvider",
-        "datasources": {
+        	"datasources": {
 			"connection":{
 			  "host": "127.0.0.1",
 			  "user": null,
 			  "password": null,
 			  "port": 9000,
 			  "database": "DevelopmentTesting"
-        	},
+	        	},
 			"hytruck_clickhouse":{
 				"table": "<table name>",
 				"zone_groups": {
@@ -106,7 +106,8 @@
 				"data_cols": [ "list of column names"],
 			    "datetime_col": "column_name_of_datetime"
 			}
-      }
+      		}
+      	}
     },
     "2": {
       "zarr": {
