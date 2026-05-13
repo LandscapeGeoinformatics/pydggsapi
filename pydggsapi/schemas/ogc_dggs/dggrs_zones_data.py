@@ -140,7 +140,7 @@ class ZonesDataDggsJsonResponse(CommonBaseModel):
     dggrs: AnyUrl
     zoneId: str
     depths: List[int]
-    schema: Schema
+    dggs_zondata_json_schema: Schema = Field(..., alias='schema')
     dimensions: Annotated[Optional[List[Dimension]], OmitIfNone] = None
     values: Dict[str, List[Value]]
 

@@ -293,7 +293,7 @@ def query_zone_data(
         'dggrs': dggrs_link,
         'zoneId': str(zoneId),
         'depths': relative_levels,
-        'schema': Schema(properties=properties, id_=col_schema_id),
+        'dggs_zondata_json_schema': Schema(properties=properties, id_=col_schema_id),
         'values': values,
     })
     if zone_level_dims:
