@@ -45,7 +45,7 @@ def test_data_retrieval():
     print(f"Success test case with data-retrieval query (igeo7, {cellids[0]})")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{cellids[0]}/data', params={'zone-depth': '0'})
     data = ZonesDataDggsJsonResponse(**response.json())
-    p1 = list(data.properties.keys())[0]
+    p1 = list(data.values.keys())[0]
     assert len(data.values[p1]) > 0
     value = data.values[p1][0]
     assert len(value.data) > 0
@@ -67,7 +67,7 @@ def test_data_retrieval():
     print(f"Success test case with data-retrieval query (igeo7, {cellids[0]}, relative_depth=2)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{cellids[0]}/data', params={'zone-depth': '2'})
     data = ZonesDataDggsJsonResponse(**response.json())
-    p1 = list(data.properties.keys())[0]
+    p1 = list(data.values.keys())[0]
     assert len(data.values[p1]) > 0
     assert (2 in data.depths)
     value = data.values[p1][0]
@@ -77,7 +77,7 @@ def test_data_retrieval():
     print(f"Success test case with data-retrieval query (igeo7, {cellids[0]}, relative_depth=1-2)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{cellids[0]}/data', params={'zone-depth': '1-2'})
     data = ZonesDataDggsJsonResponse(**response.json())
-    p1 = list(data.properties.keys())[0]
+    p1 = list(data.values.keys())[0]
     assert len(data.values[p1]) > 0
     assert (1 in data.depths) and (2 in data.depths)
     value = data.values[p1][0]
@@ -87,7 +87,7 @@ def test_data_retrieval():
     print(f"Success test case with data-retrieval query (igeo7, {cellids[0]}, relative_depth=0-2)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{cellids[0]}/data', params={'zone-depth': '0-2'})
     data = ZonesDataDggsJsonResponse(**response.json())
-    p1 = list(data.properties.keys())[0]
+    p1 = list(data.values.keys())[0]
     assert len(data.values[p1]) > 0
     assert (1 in data.depths) and (2 in data.depths) and (0 in data.depths)
     value = data.values[p1][0]

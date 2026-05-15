@@ -52,16 +52,6 @@ validation_hexagons_gdf.set_index('name', inplace=True)
 validation_centroids_gdf.set_index('name', inplace=True)
 
 
-def test_zone_query_dggrs_zones_empty_config():
-    os.environ['dggs_api_config'] = './empty.json'
-    try:
-        import pydggsapi.api
-        app = reload(pydggsapi.api).app
-        client = TestClient(app)
-    except Exception as e:
-        print(f"Testing with dggrs zoneinfo (no dggrs defined): {e}")
-
-
 def test_zone_query_dggrs_zones():
     os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
     import pydggsapi.api

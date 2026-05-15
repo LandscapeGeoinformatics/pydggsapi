@@ -46,6 +46,7 @@ dggal = "^0.0.5"
 py-ubjson = "^0.16.1"
 gcsfs = "^2025.10.0"
 ordered-set = "^4.1.0"
+pytest-env = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 bump-my-version = ">=1.2.1"
@@ -105,9 +106,14 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 pydggsapi = "pydggsapi.main:run"
 
-[tool.pytest.ini_options]
+[tool.pytest]
 minversion = "6.0"
+testpaths = ['pydggsapi/test']
 #addopts = "-ra -s"
+
+[tool.pytest_env]
+DGGRID_PATH = "pydggsapi/test/dggrid"
+dggs_api_config = "pydggsapi/test/dggs_api_config_testing.json"
 
 [tool.bumpversion]
 current_version = "0.2.1"

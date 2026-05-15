@@ -1,0 +1,93 @@
+{
+  "collections": {
+    "1": {
+      "Estonia_dem_10m_elva_igeo7_zarr": {
+	"title": "The DEM dataset of Estonia near Elva in DGGRS IGEO7 stored in Zarr format",
+        "description": "A IGEO7 dataset converted from a clipped DEM near Elva with 10M spatial resolution. The dataset was converted to DGGRS IGEO7 at refinement 14 using the nearest centroid regridding method. Then, data were aggreated to refinement level 1 using mean (skip nan) with 1-to-7 hierarchical structure.",
+	"extent": {"spatial": {"bbox": [[26.2718,  58.2267, 26.5815,  58.3295]]}},
+        "collection_provider": {
+        	"providerId": "zarr",
+        	"dggrsId": "igeo7",
+			"dggrs_zoneid_repr": "int",
+        	"min_refinement_level": 1,
+          	"max_refinement_level": 10,
+          	"datasource_id": "est_topo_dem_10m_elva"
+        }
+      }
+    },
+    "2": {
+      "Estonia_slope_10m_elva_igeo7_parquet": {
+	"title": "The Slope dataset of Estonia near Elva in DGGRS IGEO7 stored in Zarr format",
+        "description": "A IGEO7 dataset converted from a clipped DEM near Elva with 10M spatial resolution. The dataset was converted to DGGRS IGEO7 at refinement 14 using the nearest centroid regridding method. Then, data were aggreated to refinement level 1 using mean (skip nan) with 1-to-7 hierarchical structure.",
+	"extent": {"spatial": {"bbox": [[26.2718,  58.2267, 26.5815,  58.3295]]}},
+        "collection_provider": {
+          "providerId": "parquet",
+          "dggrsId": "igeo7",
+	  	  "dggrs_zoneid_repr": "int",
+          "min_refinement_level": 1,
+          "max_refinement_level": 10,
+          "datasource_id": "est_topo_slope_10m_elva"
+        }
+      }
+	}
+  },
+  "dggrs": {
+    "1": {
+      "igeo7": {
+        "title": "ISEA7H z7string",
+        "description": "desc",
+        "crs": "wgs84",
+        "shapeType": "hexagon",
+        "definition_link": "http://testing",
+        "defaultDepth": 1,
+        "classname": "igeo7_dggrs_provider.IGEO7Provider"
+      }
+    },
+    "2": {
+      "h3": {
+        "title": "h3",
+        "description": "desc",
+        "crs": "wgs84",
+        "shapeType": "hexagon",
+        "definition_link": "http://h3test",
+        "defaultDepth": 5,
+        "classname": "h3_dggrs_provider.H3Provider"
+      }
+    }
+  },
+  "collection_providers": {
+    "1": {
+      "zarr": {
+        "classname": "zarr_collection_provider.ZarrCollectionProvider",
+          "datasources": {
+          		"est_topo_dem_10m_elva": {
+	   			"filepath": "pydggsapi/test/datasets_for_testing/est_topo_dem_10m_elva_multi_refinement_level_ds.zarr",
+				"id_col": "zone_id",
+				"zone_groups":{
+					"1": "refinement_level_1",
+					"2": "refinement_level_2",
+					"3": "refinement_level_3",
+					"4": "refinement_level_4",
+					"5": "refinement_level_5",
+					"6": "refinement_level_6",
+					"7": "refinement_level_7",
+					"8": "refinement_level_8",
+					"9": "refinement_level_9",
+					"10": "refinement_level_10"}
+				}
+			}
+    	}
+	},
+    "2": {
+      "parquet": {
+        "classname": "parquet_collection_provider.ParquetCollectionProvider",
+        "datasources": {
+          "est_topo_slope_10m_elva": {
+              "filepath": "pydggsapi/test/datasets_for_testing/est_topo_slope_10m_elva_multi_refinement_level_ds.parquet",
+			  "id_col": "zone_id"
+	      }
+        }
+     }
+    }
+  }
+}

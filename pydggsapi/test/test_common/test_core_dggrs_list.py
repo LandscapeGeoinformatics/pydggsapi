@@ -33,7 +33,7 @@ def test_core_dggs_list():
     response = client.get('/dggs-api/v1-pre/collections/hytruck/dggs')
     pprint(response.text)
     assert "hytruck not found" in response.text
-    assert response.status_code == 400
+    assert response.status_code == 404
 
     print("Success test case with collections dggs-list (suitability_hytruck)")
     response = client.get('/dggs-api/v1-pre/collections/suitability_hytruck/dggs')
