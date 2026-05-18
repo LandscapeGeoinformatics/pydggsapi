@@ -137,6 +137,7 @@ def test_zone_query_dggrs_zones():
 
         for rf, validation_set in df_dict.items():
             aoi = validation_set['aoi']
+            bounds = list(map(str, aoi.bounds))
             print(f"Success test case with dggs zones query (igeo7, bbox: {aoi.bounds}, zone_level={rf}, compact=False)")
             response = client.get('/dggs-api/v1-pre/dggs/igeo7/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
             zones = ZonesResponse(**response.json())

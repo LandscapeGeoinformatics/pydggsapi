@@ -1,97 +1,91 @@
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import ZonesResponse, ZonesGeoJson
+from pydggsapi.schemas.api.collections import Collection
 from fastapi.testclient import TestClient
 import pytest
 from importlib import reload
+import h3
 import os
-from pprint import pprint
-from dggrid4py import DGGRIDv8
-import tempfile
 import shapely
 import json
+from tinydb import TinyDB
 import geopandas as gpd
 
-working = tempfile.mkdtemp()
-dggrid = DGGRIDv8(os.environ['DGGRID_PATH'], working_dir=working, silent=True)
 
-aoi = [[25.329803558251513, 58.634545591972696],
-       [25.329803558251513, 57.99111013411327],
-       [27.131561370751513, 57.99111013411327],
-       [27.131561370751513, 58.634545591972696]]
-
-non_exist_aoi = [[113.81837742963569, 22.521237932154797],
-          [113.81837742963569, 22.13760392858767],
-          [114.41438573041694, 22.13760392858767],
-          [114.41438573041694, 22.521237932154797]]
-
-aoi_3035 = [5204952.96287564, 3973761.18085118, 5324408.86305371, 4067507.93907037]
-cellids = ['841134dffffffff', '841136bffffffff', '841f65bffffffff', '8411345ffffffff', '8411369ffffffff']
-non_exists = ['86411cb6fffffff']
-zone_level = [5, 6, 7, 8, 9]
-
-aoi = shapely.Polygon(aoi)
-non_exist_aoi = shapely.Polygon(non_exist_aoi)
+db = TinyDB(os.environ.get('dggs_api_config'))
+collections = db.table('collections').all()
+collections_dict = {}
 
 
-def test_zone_query_dggrs_zones_VH3_2_IGEO7():
-    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
+def _cell_to_shapely(cellid, geometry):
+    method = h3.cell_to_boundary if (geometry == 'zone-region') else h3.cell_to_latlng
+    GEO = shapely.Polygon if (geometry == 'zone-region') else shapely.Point
+    points = method(cellid)
+    points = [points] if (geometry != 'zone-region') else points
+    points = tuple(p[::-1] for p in points)
+    return GEO(points)
+
+
+for collection in collections:
+    cid, collection_config = collection.popitem()
+    collection_config['id'] = cid
+    collections_dict[cid] = Collection(**collection_config)
+
+validation_df = {}
+
+for collection_name, collection in collections_dict.items():
+    minx, miny, maxx, maxy = collection.extent.spatial.bbox[0]
+    # create a smaller bbox
+    minx, miny = minx + 0.1, miny + 0.1
+    maxx, maxy = maxx - 0.1, maxy - 0.1
+    aoi = shapely.box(minx, miny, maxx, maxy)
+    zoneIds = h3.h3shape_to_cells_experimental(h3.geo_to_h3shape(aoi), 3, contain='overlap')
+    geometry = [_cell_to_shapely(z, 'zone-region') for z in zoneIds]
+    hex_df = gpd.GeoDataFrame({'zoneid': zoneIds}, geometry=geometry, crs='wgs84').set_index('zoneid')
+    geometry = [_cell_to_shapely(z, 'zone-centorid') for z in zoneIds]
+    centroid_df = gpd.GeoDataFrame({'zoneid': zoneIds}, geometry=geometry, crs='wgs84').set_index('zoneid')
+
+    zoneIds = h3.h3shape_to_cells_experimental(h3.geo_to_h3shape(aoi), 6, contain='overlap')
+    geometry = [_cell_to_shapely(z, 'zone-region') for z in zoneIds]
+    hex_df2 = gpd.GeoDataFrame({'zoneid': zoneIds}, geometry=geometry, crs='wgs84').set_index('zoneid')
+    geometry = [_cell_to_shapely(z, 'zone-centorid') for z in zoneIds]
+    centroid_df2 = gpd.GeoDataFrame({'zoneid': zoneIds}, geometry=geometry, crs='wgs84').set_index('zoneid')
+    validation_df[collection_name] = {3: {'hex': hex_df, 'centroid': centroid_df,
+                                          'aoi': aoi},
+                                      6: {'hex': hex_df2, 'centroid': centroid_df2,
+                                          'aoi': aoi}
+                                      }
+
+
+def test_h3_to_igeo7_zone_query_dggrs_zones():
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)
 
-    print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, compact=False)")
-    bounds = list(map(str, aoi.bounds))
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', params={"bbox": ",".join(bounds), 'compact-zone': False})
-    zones = ZonesResponse(**response.json())
-    assert len(zones.zones) > 0
-    assert response.status_code == 200
+    for collection_name, df_dict in validation_df.items():
 
-    print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level=2, compact=False)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': 2, 'compact-zone': False})
-    #pprint(response.json())
-    #zones = ZonesResponse(**response.json())
-    #assert len(zones.zones) > 0
-    assert response.status_code == 400
+        for rf, validation_set in df_dict.items():
+            aoi = validation_set['aoi']
+            bounds = list(map(str, aoi.bounds))
+            print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level={rf}, compact=False)")
+            response = client.get('/dggs-api/v1-pre/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+            zones = ZonesResponse(**response.json())
+            return_zones_list = zones.zones
+            return_zones_list.sort()
+            validation_zones_list = validation_set['hex'].sort_index().index.tolist()
+            assert len(return_zones_list) == len(validation_zones_list)
+            assert all([validation_zones_list[i] == z for i, z in enumerate(return_zones_list)])
+            assert response.status_code == 200
 
-    print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level=6, compact=False)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': 6, 'compact-zone': False})
-    zones = ZonesResponse(**response.json())
-    assert len(zones.zones) > 0
-    assert response.status_code == 200
+            print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level={rf}, compact=False, geojson)")
+            response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
+                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+            zones_geojson = ZonesGeoJson(**response.json())
+            return_features_list = zones_geojson.features
+            geometry = [shapely.from_geojson(json.dumps(f.geometry.__dict__)) for f in return_features_list]
+            zonesID = [f.properties['zoneId'] for f in return_features_list]
+            return_gdf = gpd.GeoDataFrame({'zoneid': zonesID}, geometry=geometry, crs='wgs84').set_index('zoneid').sort_index()
+            validation_hexagons_gdf = validation_set['hex'].sort_index()
+            assert len(return_gdf) == len(validation_hexagons_gdf)
+            assert all([shapely.equals(return_gdf.iloc[i]['geometry'], validation_hexagons_gdf.iloc[i]['geometry']) for i in range(len(return_gdf))])
+            assert response.status_code == 200
 
-    print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level=6, compact=True)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': 6, 'compact-zone': True})
-    zones = ZonesResponse(**response.json())
-    assert len(zones.zones) > 0
-    assert response.status_code == 200
-
-    print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level=6, compact=False, geojson)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"bbox": ",".join(bounds), 'zone-level': 6, 'compact-zone': False})
-    zones_geojson = ZonesGeoJson(**response.json())
-    assert len(zones.zones) > 0
-    assert response.status_code == 200
-
-    print(f"Success test case with dggs zones query (h3, parent zone: {cellids[0]}, zone_level=6, compact=False, geojson)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"parent-zone": cellids[0], 'zone-level': 6, 'compact-zone': False})
-    zones_geojson = ZonesGeoJson(**response.json())
-    return_features_list = zones_geojson.features
-    assert len(zones.zones) > 0
-    assert response.status_code == 200
-
-    print(f"Fail test case with dggs zones query (h3, parent zone: {cellids[0]}, zone_level=8, compact=False, geojson)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"parent-zone": cellids[0], 'zone-level': 8, 'compact-zone': False})
-    # because of the datasource rcm_2080248_HV_reproject_2022-05_05 that comes with refinement level 7 to 12, so it is an empty respons.
-    assert response.status_code == 204
-
-    print(f"Empty test case with dggs zones query (h3, bbox: {non_exist_aoi.bounds}, zone_level=6, compact=False, geojson)")
-    non_exist_bounds = list(map(str, non_exist_aoi.bounds))
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"bbox": ",".join(non_exist_bounds), 'zone-level': 6, 'compact-zone': False})
-    assert response.status_code == 204
-
-    print(f"Empty test case with dggs zones query (h3, parent zone: {non_exists[0]}, zone_level=6, compact=False, geojson)")
-    response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"parent-zone": non_exists[0], 'zone-level': 6, 'compact-zone': False})
-    assert response.status_code == 204
