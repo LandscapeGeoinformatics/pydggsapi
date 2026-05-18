@@ -84,7 +84,9 @@
         "datasources": {
           "est_topo_slope_10m_elva": {
               "filepath": "pydggsapi/test/datasets_for_testing/est_topo_slope_10m_elva_multi_refinement_level_ds.parquet",
-			  "id_col": "zone_id"
+			  "id_col": "zone_id",
+			  "exclude_data_cols": ["__null_dask_index__"]
+			  
 	      }
         }
      }
