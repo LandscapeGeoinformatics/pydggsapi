@@ -88,21 +88,21 @@ def test_data_retrieval():
         assert v[0].depth == 1
         assert len(v[0].data) == 13
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, depth=[0] ,return = geojson)")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=0 ,return = geojson)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', headers={'accept': 'application/geo+json'},
                           params={'zone-depth': '0'})
     assert response.status_code == 200
     data = ZonesDataGeoJson(**response.json())
     assert len(data.features) > 0
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, depth=0,return = geojson, geometry='zone-centroid')")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=0,return = geojson, geometry='zone-centroid')")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'geometry': 'zone-centroid', 'zone-depth': '0'},
                           headers={'accept': 'application/geo+json'})
     assert response.status_code == 200
     data = ZonesDataGeoJson(**response.json())
     assert len(data.features) > 0
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, relative_depth=2)")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=2)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'zone-depth': '2'})
     data = ZonesDataDggsJsonResponse(**response.json())
     assert response.status_code == 200
@@ -112,7 +112,7 @@ def test_data_retrieval():
         assert len(v[0].data) > 0
     assert response.status_code == 200
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, relative_depth=1-2)")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=1-2)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'zone-depth': '1-2'})
     data = ZonesDataDggsJsonResponse(**response.json())
     assert response.status_code == 200
@@ -123,7 +123,7 @@ def test_data_retrieval():
             assert data.depth in zone_depth_counts
             assert len(data.data) > 0
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, relative_depth=0-2)")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=0-2)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'zone-depth': '0-2'})
     data = ZonesDataDggsJsonResponse(**response.json())
     assert response.status_code == 200
@@ -135,14 +135,14 @@ def test_data_retrieval():
             assert len(data.data) > 0
     assert response.status_code == 200
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, relative_depth=0-2, geometry='zone-centroid', return=geojson)")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=0-2, geometry='zone-centroid', return=geojson)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
                           headers={'accept': 'application/geo+json'})
     data = ZonesDataGeoJson(**response.json())
     assert len(data.features) > 0
     assert response.status_code == 200
 
-    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, relative_depth=0-2, geometry='zone-centroid', return=zarr+zip)")
+    print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=0-2, geometry='zone-centroid', return=zarr+zip)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
                           headers={'accept': 'application/zarr+zip'})
     assert response.status_code == 200
@@ -151,7 +151,7 @@ def test_data_retrieval():
     z = zarr.open('data_zarr.zip')
     print(z.tree())
 
-    print(f"Empty test case with data-retrieval query (igeo7, 00000000, relative_depth=0-2, geometry='zone-centroid', return=geojson)")
+    print(f"Empty test case with data-retrieval query (igeo7, 00000000, zone-depth=0-2, geometry='zone-centroid', return=geojson)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/00000000/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
                           headers={'accept': 'application/geo+json'})
     assert response.status_code == 204

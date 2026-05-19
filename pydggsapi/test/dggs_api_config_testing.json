@@ -50,7 +50,7 @@
         "crs": "wgs84",
         "shapeType": "hexagon",
         "definition_link": "http://h3test",
-        "defaultDepth": 5,
+        "defaultDepth": 1,
         "classname": "h3_dggrs_provider.H3Provider"
       }
     }
