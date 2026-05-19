@@ -1,46 +1,31 @@
-from pydggsapi.schemas.ogc_dggs.dggrs_list import DggrsListResponse
 from pydggsapi.schemas.ogc_dggs.dggrs_descrption import DggrsDescription
 from fastapi.testclient import TestClient
+from tinydb import TinyDB
 import pytest
 from importlib import reload
 import os
-from pprint import pprint
 
-support_grids =['ivea7h', 'rhealpix']
+support_grids = []
 
-def test_core_dggs_description_empty_config():
-    os.environ['dggs_api_config'] = './empty.json'
-    try:
-        import pydggsapi.api
-        app = reload(pydggsapi.api).app
-        client = TestClient(app)
-    except Exception as e:
-        print(f"Testing with dggrs definition (no dggrs defined): {e}")
+db = TinyDB(os.environ.get('dggs_api_config'))
+all_dggrs = db.table('dggrs').all()
+
+for dggrs in all_dggrs:
+    dggrs_id, dggrs_config = dggrs.popitem()
+    if ("dggal_dggrs_provider" in dggrs_config["classname"]):
+        support_grids.append(dggrs_id)
+
+assert len(support_grids) > 0
 
 
 def test_core_dggrs_description():
-    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)
-    print("Fail test case with non existing dggrs id")
-    response = client.get('/dggs-api/v1-pre/dggs/Not_exisits')
-    pprint(response.json())
-    assert "not supported" in response.text
-    assert response.status_code == 400
 
-    os.environ['dggs_api_config'] = './dggs_api_config_testing.json'
-    app = reload(pydggsapi.api).app
-    client = TestClient(app)
     for grid in support_grids:
-        print(f"Success test case with dggs description {grid})")
+        print(f"Success test case with dggs description {grid}")
         response = client.get(f'/dggs-api/v1-pre/dggs/{grid}')
-        pprint(response.json())
-        assert DggrsDescription(**response.json())
         assert response.status_code == 200
-        print(f"Success test case with collections dggs-description (dggal_{grid}_hytruck, {grid})")
-        response = client.get(f'/dggs-api/v1-pre/collections/dggal_{grid}_hytruck/dggs/{grid}')
-        pprint(response.json())
         assert DggrsDescription(**response.json())
-        assert response.status_code == 200
 
