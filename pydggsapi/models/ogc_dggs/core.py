@@ -117,19 +117,20 @@ def query_zone_info(
         zoneId = [zoneinfoReq.zoneId]
         cp = collection_provider[v.collection_provider.providerId]
         datasource_id = v.collection_provider.datasource_id
-        if (v.collection_provider.dggrsId != dggs_info.id and
-                v.collection_provider.dggrsId not in dggrs_provider.dggrs_conversion):
-            continue
-        # if the request dggrs support conversion to the collection's dggrs
-        if (v.collection_provider.dggrsId != dggs_info.id and
-                v.collection_provider.dggrsId in dggrs_provider.dggrs_conversion):
-            converted_zones = dggrs_provider.convert([zoneinfoReq.zoneId], v.collection_provider.dggrsId,
-                                                     v.collection_provider.dggrs_zoneid_repr)
-            # the zoneId and zonelevel is converted to the collection's native dggrs
-            zoneId = converted_zones.target_zoneIds
-            zonelevel = converted_zones.target_res[0]
-        # At the point, the zoneId may be converted to the collection's native dggrs
-        if (v.collection_provider.dggrs_zoneid_repr != 'textual'):
+        # if the collection's dggrs not equal to the request dggrs, check conversion is supported.
+        if (v.collection_provider.dggrsId != dggs_info.id):
+            if (v.collection_provider.dggrsId not in dggrs_provider.dggrs_conversion):
+                continue
+            # if the request dggrs support conversion to the collection's dggrs
+            elif (v.collection_provider.dggrsId in dggrs_provider.dggrs_conversion):
+                converted_zones = dggrs_provider.convert([zoneinfoReq.zoneId], v.collection_provider.dggrsId,
+                                                         v.collection_provider.dggrs_zoneid_repr)
+                # The zoneId and zonelevel is converted to the collection's dggrs.
+                # The zone Id representation is specified using the collection's configuration.
+                zoneId = converted_zones.target_zoneIds
+                zonelevel = converted_zones.target_res[0]
+        # collection's dggrs equal to the request dggrs, check if need to convert zone id representation
+        elif (v.collection_provider.dggrs_zoneid_repr != 'textual'):
             tmp_dggrs_provider = global_dggrs_providers[v.collection_provider.dggrsId]
             zoneId = tmp_dggrs_provider.zone_id_from_textual(zoneId, v.collection_provider.dggrs_zoneid_repr)
         data = cp.get_data(zoneId, zonelevel, datasource_id, input_zoneIds_padding=False)
