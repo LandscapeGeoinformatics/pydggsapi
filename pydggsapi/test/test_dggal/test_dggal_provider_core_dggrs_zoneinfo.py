@@ -61,7 +61,7 @@ for collection_name, collection in collections_dict.items():
                                       'hex': hex_df, 'centroid': centroid_df.set_index('zone_id')}
 
 
-def test_core_dggs_zoneinfo():
+def test_dggal_core_dggs_zoneinfo():
     import pydggsapi.api
     app = reload(pydggsapi.api).app
     client = TestClient(app)
