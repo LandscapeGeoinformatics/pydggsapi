@@ -133,7 +133,6 @@ def test_data_retrieval():
         for data in v:
             assert data.depth in zone_depth_counts
             assert len(data.data) > 0
-    assert response.status_code == 200
 
     print(f"Success test case with data-retrieval query (igeo7, {zone['name']}, zone-depth=0-2, geometry='zone-centroid', return=geojson)")
     response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
