@@ -106,14 +106,14 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 pydggsapi = "pydggsapi.main:run"
 
-[tool.pytest]
+[tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = ['pydggsapi/test']
+testpaths = ['./tests']
 #addopts = "-ra -s"
 
 [tool.pytest_env]
-DGGRID_PATH = "pydggsapi/test/dggrid"
-dggs_api_config = "pydggsapi/test/dggs_api_config_testing.json"
+DGGRID_PATH = "dggrid"
+dggs_api_config = "dggs_api_config_testing.json"
 
 [tool.bumpversion]
 current_version = "0.2.1"
