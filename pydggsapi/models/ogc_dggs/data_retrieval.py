@@ -182,7 +182,10 @@ def query_zone_data(
                 # master = master if (returntype == 'application/geo+json') else master.drop(columns=['geometry'])
                 try:
                     data[z] = data[z].merge(master, how='outer', suffixes=[None, cid], left_index=True, right_index=True)
-                    data[z] = data[z].drop(columns=[f'geometry{cid}'], errors='ignore') if (returngeometry is not None) else data[z]
+                    if (returngeometry is not None):
+                        data[z]['geometry'] = data[z].apply(lambda row: row[f'geometry{cid}'] if (row['geometry'] is None) else row['geometry'],
+                                                            axis=1)
+                        data[z] = data[z].drop(columns=[f'geometry{cid}'], errors='ignore')
                 except KeyError:
                     data[z] = master
     if not data:
@@ -221,7 +224,7 @@ def query_zone_data(
                 )
                 for i, f in enumerate(feature)
                 # skip features with all-nan column properties, excluding datetime and zone ID/depth details
-                if all([pd.notna(v) for k, v in f.items() if k in data_type.keys()])
+                if any([pd.notna(v) for k, v in f.items() if k in data_type.keys()])
             ]
             features += feature
             id_ += len(d)
