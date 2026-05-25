@@ -46,8 +46,8 @@ validation_df = {}
 for collection_name, collection in collections_dict.items():
     minx, miny, maxx, maxy = collection.extent.spatial.bbox[0]
     # create a smaller bbox
-    minx, miny = minx + 0.1, miny + 0.1
-    maxx, maxy = maxx - 0.1, maxy - 0.1
+    minx, miny = minx + 0.1, miny + 0.05
+    maxx, maxy = maxx - 0.1, maxy - 0.05
     aoi = shapely.box(minx, miny, maxx, maxy)
     authalic_aoi = geoseries_to_authalic(GeoSeries(aoi))[0]
     max_rf = collection.collection_provider.max_refinement_level

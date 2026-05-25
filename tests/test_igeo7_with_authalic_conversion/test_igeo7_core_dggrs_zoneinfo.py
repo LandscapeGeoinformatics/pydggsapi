@@ -42,7 +42,10 @@ dggrid = DGGRIDv8(os.environ['DGGRID_PATH'], working_dir=working, silent=True)
 
 validation_df = {}
 for collection_name, collection in collections_dict.items():
-    bbox = shapely.box(*collection.extent.spatial.bbox[0])
+    minx, miny, maxx, maxy = collection.extent.spatial.bbox[0]
+    minx, miny = minx + 0.1, miny + 0.05
+    maxx, maxy = maxx - 0.1, maxy - 0.05
+    bbox = shapely.box(minx, miny, maxx, maxy)
     bbox = geoseries_to_authalic(GeoSeries(bbox))[0]
     rf = collection.collection_provider.max_refinement_level - 2
     hex_df = dggrid.grid_cell_polygons_for_extent('IGEO7', rf, clip_geom=bbox, **extra_conf)
@@ -72,12 +75,12 @@ def test_core_dggs_zoneinfo():
         zone_centroid_geometry = df_dict['centroid'].loc[zone['name']]['geometry']
         print(f"Success test case with dggs zone info (igeo7 {zone['name']})")
         response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}')
+        assert response.status_code == 200
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
         hexagon = shapely.from_geojson(json.dumps(zoneinfo.geometry.__dict__))
         assert hexagon.equals_exact(zone['geometry'])
         assert centroid.equals_exact(zone_centroid_geometry)
-        assert response.status_code == 200
 
         print("Fail test case with collections (non-existing dggrs id)")
         response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/not_exit/zones/00000000')
@@ -86,12 +89,12 @@ def test_core_dggs_zoneinfo():
 
         print(f'Success test case with collections on zones info ({collection_name}, igeo7, {zone["name"]})')
         response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/igeo7/zones/{zone["name"]}')
+        assert response.status_code == 200
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
         hexagon = shapely.from_geojson(json.dumps(zoneinfo.geometry.__dict__))
         assert hexagon.equals_exact(zone['geometry'])
         assert centroid.equals_exact(zone_centroid_geometry)
-        assert response.status_code == 200
 
         print(f"Fail test case with collections on non-exist zones info ({collection_name}, igeo7, {non_exists[0]})")
         response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/igeo7/zones/{non_exists[0]}')
