@@ -53,11 +53,13 @@ assert len(collections_dict.keys()) > 0
 
 validation_df = {}
 for collection_name, collection in collections_dict.items():
-    bbox = collection.extent.spatial.bbox[0]
-    bbox[0], bbox[1], bbox[2], bbox[3] = round(bbox[0] + 0.1 ,3), round(bbox[1] + 0.05, 3), round(bbox[2] - 0.1, 3), round(bbox[3] - 0.05, 3)
+    minx, miny, maxx, maxy = collection.extent.spatial.bbox[0]
+    # create a smaller bbox
+    minx, miny = round(minx + 0.1, 3), round(miny + 0.05, 3)
+    maxx, maxy = round(maxx - 0.1, 3), round(maxy - 0.05, 3)
     rf = collection.collection_provider.max_refinement_level - 2
     mygrid = support_grids[collection.collection_provider.dggrsId]()
-    geoextent = GeoExtent(GeoPoint(bbox[1], bbox[0]), GeoPoint(bbox[3], bbox[2]))
+    geoextent = GeoExtent(GeoPoint(miny, minx), GeoPoint(maxy, maxx))
     zone_ids = mygrid.listZones(rf, geoextent)
     zone_ids = [int(z) for z in zone_ids]
     zone_ids_textual = [mygrid.getZoneTextID(zid) for zid in zone_ids]

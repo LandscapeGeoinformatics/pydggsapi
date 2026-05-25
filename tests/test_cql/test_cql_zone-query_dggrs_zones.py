@@ -93,8 +93,8 @@ validation_df = {}
 for collection_name, collection in collections_dict.items():
     minx, miny, maxx, maxy = collection.extent.spatial.bbox[0]
     # create a smaller bbox
-    #minx, miny = minx + 0.1, miny + 0.1
-    #maxx, maxy = maxx - 0.1, maxy - 0.1
+    #minx, miny = round(minx + 0.1, 3), round(miny + 0.05, 3)
+    #maxx, maxy = round(maxx - 0.1, 3), round(maxy - 0.05, 3)
     aoi = shapely.box(minx, miny, maxx, maxy)
     datasource_id = collection.collection_provider.datasource_id
     max_rf = collection.collection_provider.max_refinement_level

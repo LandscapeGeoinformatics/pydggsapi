@@ -36,8 +36,9 @@ validation_df = {}
 
 for collection_name, collection in collections_dict.items():
     minx, miny, maxx, maxy = collection.extent.spatial.bbox[0]
-    minx, miny = minx + 0.15, miny + 0.05
-    maxx, maxy = maxx - 0.15, maxy - 0.05
+    # create a smaller bbox
+    minx, miny = round(minx + 0.1, 3), round(miny + 0.05, 3)
+    maxx, maxy = round(maxx - 0.1, 3), round(maxy - 0.05, 3)
     bbox = shapely.box(minx, miny, maxx, maxy)
     rf = collection.collection_provider.max_refinement_level - 4
     zoneIds = h3.h3shape_to_cells_experimental(h3.geo_to_h3shape(bbox), rf, contain='overlap')
