@@ -12,14 +12,14 @@ def test_core_dggs_list():
     app = reload(pydggsapi.api).app
     client = TestClient(app)
     print("Success test case with dggs-list")
-    response = client.get('/dggs-api/v1-pre/dggs')
+    response = client.get('/dggs-api/dggs')
     pprint(response.json())
     assert DggrsListResponse(**response.json())
     assert response.status_code == 200
 
     # Fail Case on Collection Not found
     print("Fail test case with collections dggs-list (collection not found)")
-    response = client.get('/dggs-api/v1-pre/dggs/not_exist')
+    response = client.get('/dggs-api/dggs/not_exist')
     pprint(response.text)
     assert "not support" in response.text
     assert response.status_code == 400

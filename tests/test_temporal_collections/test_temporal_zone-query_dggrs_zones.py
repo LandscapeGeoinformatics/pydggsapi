@@ -48,7 +48,7 @@ datetime_list = ["""2025-09-22/2025-09-26""",
 cql_composition = ["""({var_name} >= {value1}) AND ({var_name} <= {value2})"""]
 
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collection_providers = db.table('collection_providers').all()
 all_dggrs = db.table('dggrs').all()
@@ -132,7 +132,7 @@ def test_temporal_zone_query_dggrs_zones():
     for datetime_error in datetime_syntax_error_list:
         print(f"Fail test case for datetime syntax error (igeo, bbox: {non_exist_aoi.bounds}, compact=False)")
         bounds = list(map(str, non_exist_aoi.bounds))
-        response = client.get('/dggs-api/v1-pre/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 7,
+        response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 7,
                                                                            "compact-zone": False,
                                                                            "datetime": datetime_error})
         assert response.status_code == 400
@@ -151,7 +151,7 @@ def test_temporal_zone_query_dggrs_zones():
             for datetime_string, tdata in zip(datetime_list, test_values):
                 print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
                         compact=False, datetime: {datetime_string})")
-                response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones',
+                response = client.get(f'/dggs-api/dggs/{dggrsid}/zones',
                                       params={"bbox": ",".join(bounds), "zone-level": rf, "compact-zone": False,
                                               "datetime": datetime_string})
                 if (is_temporal):

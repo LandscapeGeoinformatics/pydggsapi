@@ -27,7 +27,7 @@ extra_conf = {
 
 non_exists = ['055266135']
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collections_dict = {}
 
@@ -61,12 +61,12 @@ def test_core_dggs_zoneinfo():
     app = reload(pydggsapi.api).app
     client = TestClient(app)
     print("Fail test case with not exist dggrs id")
-    response = client.get('/dggs-api/v1-pre/dggs/not_exist/zones/00000000')
+    response = client.get('/dggs-api/dggs/not_exist/zones/00000000')
     assert "not supported" in response.text
     assert response.status_code == 400
 
     print("Fail test case with not exist collection dggs zone info (collection not found)")
-    response = client.get('/dggs-api/v1-pre/collections/not_exist/dggs/igeo7/zones/00000000')
+    response = client.get('/dggs-api/collections/not_exist/dggs/igeo7/zones/00000000')
     assert "not found" in response.text
     assert response.status_code == 404
 
@@ -75,7 +75,7 @@ def test_core_dggs_zoneinfo():
         zone = df_dict['hex'].iloc[iloc_pos[0]]
         zone_centroid_geometry = df_dict['centroid'].loc[zone['name']]['geometry']
         print(f"Success test case with dggs zone info (igeo7 {zone['name']})")
-        response = client.get(f'/dggs-api/v1-pre/dggs/igeo7/zones/{zone["name"]}')
+        response = client.get(f'/dggs-api/dggs/igeo7/zones/{zone["name"]}')
         assert response.status_code == 200
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
@@ -84,12 +84,12 @@ def test_core_dggs_zoneinfo():
         assert centroid.equals_exact(zone_centroid_geometry)
 
         print("Fail test case with collections (non-existing dggrs id)")
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/not_exit/zones/00000000')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/not_exit/zones/00000000')
         assert "not supported" in response.text
         assert response.status_code == 400
 
         print(f'Success test case with collections on zones info ({collection_name}, igeo7, {zone["name"]})')
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/igeo7/zones/{zone["name"]}')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/igeo7/zones/{zone["name"]}')
         assert response.status_code == 200
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
@@ -98,5 +98,5 @@ def test_core_dggs_zoneinfo():
         assert centroid.equals_exact(zone_centroid_geometry)
 
         print(f"Fail test case with collections on non-exist zones info ({collection_name}, igeo7, {non_exists[0]})")
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/igeo7/zones/{non_exists[0]}')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/igeo7/zones/{non_exists[0]}')
         assert response.status_code == 204

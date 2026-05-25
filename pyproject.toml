@@ -113,7 +113,7 @@ testpaths = ['./tests']
 
 [tool.pytest_env]
 DGGRID_PATH = "dggrid"
-dggs_api_config = "dggs_api_config_testing.json"
+DGGS_API_CONFIG = "dggs_api_config_testing.json"
 
 [tool.bumpversion]
 current_version = "0.2.1"

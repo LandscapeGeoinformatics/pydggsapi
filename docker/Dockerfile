@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p ${APP_CONFIG_DIR}
 
 COPY dggs_api_config_example.json ${APP_CONFIG_DIR}/pydggsapi-config.json
-ENV dggs_api_config=${APP_CONFIG_DIR}/pydggsapi-config.json
+ENV DGGS_API_CONFIG=${APP_CONFIG_DIR}/pydggsapi-config.json
 ENV DGGRID_PATH=/usr/local/bin/dggrid
 
 # obtain dependency source files

@@ -60,7 +60,7 @@ if os.getenv('GZIP_ENABLED', 'true').lower() == 'true':
         minimum_size=os.getenv('GZIP_MINIMUM_SIZE', 500),
     )
 
-dggs_prefix = os.environ.get('DGGS_PREFIX', '/dggs-api/v1-pre')
+dggs_prefix = os.environ.get('DGGS_PREFIX', '/dggs-api')
 tiles_prefix = os.environ.get('TILES_PREFIX', '/tiles-api')
 
 app.include_router(dggs_api.router, prefix=dggs_prefix)

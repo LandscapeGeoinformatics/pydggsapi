@@ -26,8 +26,8 @@ class StandaloneApplication(WSGIApplication):
 
 def run():
     load_dotenv()
-    bind = os.environ.get('bind', '0.0.0.0:8000')
-    workers = os.environ.get('workers', 4)
+    bind = os.environ.get('BIND', '0.0.0.0:8000')
+    workers = os.environ.get('WORKERS', 4)
     options = {
         "bind": bind,
         "workers": workers,
@@ -37,15 +37,15 @@ def run():
     # set up logging for app as console output
     logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s {%(module)s} [%(funcName)s] %(message)s',
                         datefmt='%Y-%m-%d,%H:%M:%S', level=int(log_level))
-    if (os.environ.get('dggs_api_config') is None):
-        raise Exception("Env variable dggs_api_config is not set.")
+    if (os.environ.get('DGGS_API_CONFIG') is None):
+        raise Exception("Env variable DGGS_API_CONFIG is not set.")
     StandaloneApplication("pydggsapi.api:app", options).run()
 
 
 if __name__ == '__main__':
     load_dotenv()
-    bind = os.environ.get('bind', '0.0.0.0:8000')
-    workers = os.environ.get('workers', 4)
+    bind = os.environ.get('BIND', '0.0.0.0:8000')
+    workers = os.environ.get('WORKERS', 4)
     options = {
         "bind": bind,
         "workers": workers,
@@ -56,6 +56,6 @@ if __name__ == '__main__':
     # set up logging for app as console output
     logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s {%(module)s} [%(funcName)s] %(message)s',
                         datefmt='%Y-%m-%d,%H:%M:%S', level=int(log_level))
-    if (os.environ.get('dggs_api_config') is None):
-        raise Exception("Env variable dggs_api_config is not set.")
+    if (os.environ.get('DGGS_API_CONFIG') is None):
+        raise Exception("Env variable DGGS_API_CONFIG not set.")
     StandaloneApplication("pydggsapi.api:app", options).run()

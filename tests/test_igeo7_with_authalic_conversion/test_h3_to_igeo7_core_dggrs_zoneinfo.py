@@ -12,7 +12,7 @@ import shapely
 import json
 
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collections_dict = {}
 
@@ -61,7 +61,7 @@ def test_h3_to_igeo7_core_dggs_zoneinfo():
         zone = df_dict['hex'].iloc[iloc_pos[0]]
         zone_centroid_geometry = df_dict['centroid'].loc[zone['zoneid']]['geometry']
         print(f"Success test case with dggs zone info (h3 {zone['zoneid']})")
-        response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}')
+        response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}')
         assert response.status_code == 200
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
@@ -70,12 +70,12 @@ def test_h3_to_igeo7_core_dggs_zoneinfo():
         assert centroid.equals_exact(zone_centroid_geometry)
 
         print("Fail test case with collections (non-existing dggrs id)")
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/not_exit/zones/{non_exists[0]}')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/not_exit/zones/{non_exists[0]}')
         assert "not supported" in response.text
         assert response.status_code == 400
 
         print(f'Success test case with collections on zones info ({collection_name}, h3, {zone["zoneid"]})')
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/h3/zones/{zone["zoneid"]}')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/h3/zones/{zone["zoneid"]}')
         assert response.status_code == 200
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
@@ -84,5 +84,5 @@ def test_h3_to_igeo7_core_dggs_zoneinfo():
         assert centroid.equals_exact(zone_centroid_geometry)
 
         print(f"Fail test case with collections on non-exist zones info ({collection_name}, h3, {non_exists[0]})")
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/h3/zones/{non_exists[0]}')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/h3/zones/{non_exists[0]}')
         assert response.status_code == 204

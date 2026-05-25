@@ -50,7 +50,7 @@ cql_list = ["""{var_name} > {value}""",
 cql_composition = ["""({var_name} >= {value1}) AND ({var_name} <= {value2})"""]
 
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collection_providers = db.table('collection_providers').all()
 all_dggrs = db.table('dggrs').all()
@@ -147,7 +147,7 @@ def test_cql_zone_query_dggrs_zones():
     for cql_error in cql_syntax_error_list:
         print(f"Fail test case for cql syntax error (igeo, bbox: {non_exist_aoi.bounds}, compact=False)")
         bounds = list(map(str, non_exist_aoi.bounds))
-        response = client.get('/dggs-api/v1-pre/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 7,
+        response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 7,
                                                                            "compact-zone": False,
                                                                            "filter": cql_error})
         assert response.status_code == 400
@@ -174,7 +174,7 @@ def test_cql_zone_query_dggrs_zones():
                 cql_string = cql_string.format(var_name=column_names[0], value=test_value)
                 print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
                         compact=False, cql: {cql_string})")
-                response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
+                response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
                                                                                         "zone-level": rf,
                                                                                         "compact-zone": False,
                                                                                         "filter": cql_string})
@@ -193,7 +193,7 @@ def test_cql_zone_query_dggrs_zones():
                 cql_string = cql_string.format(var_name=column_names[0], value1=test_values[0][0], value2=test_values[1][0])
                 print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
                         compact=False, cql: {cql_string})")
-                response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
+                response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
                                                                                         "zone-level": rf,
                                                                                         "compact-zone": False,
                                                                                         "filter": cql_string})

@@ -7,7 +7,7 @@ import os
 
 support_grids = []
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 all_dggrs = db.table('dggrs').all()
 
 for dggrs in all_dggrs:
@@ -25,7 +25,7 @@ def test_core_dggrs_description():
 
     for grid in support_grids:
         print(f"Success test case with dggs description {grid}")
-        response = client.get(f'/dggs-api/v1-pre/dggs/{grid}')
+        response = client.get(f'/dggs-api/dggs/{grid}')
         assert response.status_code == 200
         assert DggrsDescription(**response.json())
 

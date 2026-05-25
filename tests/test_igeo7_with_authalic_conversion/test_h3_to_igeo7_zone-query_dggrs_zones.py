@@ -11,7 +11,7 @@ from tinydb import TinyDB
 import geopandas as gpd
 
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collections_dict = {}
 
@@ -68,7 +68,7 @@ def test_h3_to_igeo7_zone_query_dggrs_zones():
             aoi = validation_set['aoi']
             bounds = list(map(str, aoi.bounds))
             print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level={rf}, compact=False)")
-            response = client.get('/dggs-api/v1-pre/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+            response = client.get('/dggs-api/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
             zones = ZonesResponse(**response.json())
             return_zones_list = zones.zones
             return_zones_list.sort()
@@ -78,7 +78,7 @@ def test_h3_to_igeo7_zone_query_dggrs_zones():
             assert response.status_code == 200
 
             print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level={rf}, compact=False, geojson)")
-            response = client.get('/dggs-api/v1-pre/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
+            response = client.get('/dggs-api/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
                                   params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
             zones_geojson = ZonesGeoJson(**response.json())
             return_features_list = zones_geojson.features

@@ -50,7 +50,7 @@ datetime_list = ["""2025-09-22/2025-09-26""",
 cql_composition = ["""({var_name} >= {value1}) AND ({var_name} <= {value2})"""]
 
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collection_providers = db.table('collection_providers').all()
 all_dggrs = db.table('dggrs').all()
@@ -159,7 +159,7 @@ def test_temporal_zone_query_dggrs_zones():
             print(f"Datetime to test : {datetime_string}")
             print(f"test data : {tdata}")
             print(f"Success datetime test case: data-retrieval query ({dggrsid}, {zid}, zone-depth=0)")
-            response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones/{zid}/data',
+            response = client.get(f'/dggs-api/dggs/{dggrsid}/zones/{zid}/data',
                                   params={'zone-depth': 0, 'datetime': datetime_string})
             if (tdata.shape[0] > 0):
                 assert response.status_code == 200
@@ -175,7 +175,7 @@ def test_temporal_zone_query_dggrs_zones():
                 assert response.status_code == 204
 
             print(f"Success datetime test case: data-retrieval query ({dggrsid}, {zid}, zone-depth=0, return = geojson)")
-            response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones/{zid}/data', headers={'accept': 'application/geo+json'},
+            response = client.get(f'/dggs-api/dggs/{dggrsid}/zones/{zid}/data', headers={'accept': 'application/geo+json'},
                                   params={'zone-depth': 0, 'datetime': datetime_string})
             if (tdata.shape[0] > 0):
                 assert response.status_code == 200

@@ -59,7 +59,7 @@ cql_list = ["""{var_name} > {value}""",
 cql_composition = ["""({var_name} >= {value1}) AND ({var_name} <= {value2})"""]
 
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collection_providers = db.table('collection_providers').all()
 all_dggrs = db.table('dggrs').all()
@@ -171,7 +171,7 @@ def test_cql_data_retrieval():
             print(f"CQL to test : {cql_string}")
             print(f"test data : {tdata}")
             print(f"Success CQL test case: data-retrieval query ({dggrsid}, {zid}, zone-depth=0)")
-            response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones/{zid}/data',
+            response = client.get(f'/dggs-api/dggs/{dggrsid}/zones/{zid}/data',
                                   params={'zone-depth': 0, 'filter': cql_string})
             if (tdata.shape[0] > 0):
                 assert response.status_code == 200
@@ -186,7 +186,7 @@ def test_cql_data_retrieval():
                 assert response.status_code == 204
 
             print(f"Success CQL test case: data-retrieval query ({dggrsid}, {zid}, zone-depth=0, return = geojson)")
-            response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones/{zid}/data', headers={'accept': 'application/geo+json'},
+            response = client.get(f'/dggs-api/dggs/{dggrsid}/zones/{zid}/data', headers={'accept': 'application/geo+json'},
                                   params={'zone-depth': 0, 'filter': cql_string})
             if (tdata.shape[0] > 0):
                 assert response.status_code == 200

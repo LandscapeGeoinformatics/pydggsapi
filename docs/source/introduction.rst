@@ -5,7 +5,7 @@ pydggsapi runs on python3. It provides an easy setup for users to publish DGGS-e
 
 |overall_structure|
 
-pydggsapi uses TinyDB to store the definitions of collections, DGGRS providers and collection providers. You can specify the path of the DB in the environment variable ``dggs_api_config``.
+pydggsapi uses TinyDB to store the definitions of collections, DGGRS providers and collection providers. You can specify the path of the DB in the environment variable ``DGGS_API_CONFIG``.
 
 This structure provides two abstract class definitions that allow developers to quickly implement new DGGRS and Collection providers to work with pydggsapi. The DGGRS and collections providers serve as accessors to collections. Currently, it supports: 
 
@@ -41,7 +41,7 @@ or install the latest updates from GitHub (under the same virtual environment of
 
 .. code-block:: bash
     
-    dggs_api_config=<Path to TinyDB>
+    DGGS_API_CONFIG=<Path to TinyDB>
     DGGRID_PATH=<Path to dggrid executable>
 
 3. Start the server:

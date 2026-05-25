@@ -42,7 +42,7 @@ def get_conformance_classes():
 
 
 def _checkIfTableExists() -> TinyDB:
-    db = TinyDB(os.environ.get('dggs_api_config'))
+    db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
     if ('dggrs' not in db.tables()):
         logger.error(f"{__name__} dggrs table not found.")
         raise Exception(f"{__name__} dggrs table not found.")

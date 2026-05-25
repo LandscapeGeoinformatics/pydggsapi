@@ -23,7 +23,7 @@ supported_grids_mapping = {'IVEA7H': IVEA7H,
 
 support_grids = {}
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 all_dggrs = db.table('dggrs').all()
 collections = db.table('collections').all()
 collections_dict = {}
@@ -75,7 +75,7 @@ def test_dggal_core_dggs_zoneinfo():
         zone = df_dict['hex'].iloc[iloc_pos[0]]
         zone_centroid_geometry = df_dict['centroid'].loc[zone['zone_id']]['geometry']
         print(f"Success test case with dggs zone info ({dggrsid} {zone['zone_id']})")
-        response = client.get(f'/dggs-api/v1-pre/dggs/{dggrsid}/zones/{zone["zone_id"]}')
+        response = client.get(f'/dggs-api/dggs/{dggrsid}/zones/{zone["zone_id"]}')
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
         hexagon = shapely.from_geojson(json.dumps(zoneinfo.geometry.__dict__))
@@ -84,12 +84,12 @@ def test_dggal_core_dggs_zoneinfo():
         assert response.status_code == 200
 
         print("Fail test case with collections (non-existing dggrs id)")
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/not_exit/zones/00000000')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/not_exit/zones/00000000')
         assert "not supported" in response.text
         assert response.status_code == 400
 
         print(f'Success test case with collections on zones info ({collection_name}, {dggrsid}, {zone["zone_id"]})')
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/{dggrsid}/zones/{zone["zone_id"]}')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/{dggrsid}/zones/{zone["zone_id"]}')
         zoneinfo = ZoneInfoResponse(**response.json())
         centroid = shapely.from_geojson(json.dumps(zoneinfo.centroid.__dict__))
         hexagon = shapely.from_geojson(json.dumps(zoneinfo.geometry.__dict__))
@@ -98,5 +98,5 @@ def test_dggal_core_dggs_zoneinfo():
         assert response.status_code == 200
 
         print(f"Fail test case with collections on non-exist zones info ({collection_name}, {dggrsid}, 00000000)")
-        response = client.get(f'/dggs-api/v1-pre/collections/{collection_name}/dggs/{dggrsid}/zones/00000000')
+        response = client.get(f'/dggs-api/collections/{collection_name}/dggs/{dggrsid}/zones/00000000')
         assert response.status_code == 204

@@ -23,7 +23,7 @@ def _cell_to_shapely(cellid, geometry):
 
 non_exists = ['84411c9ffffffff']
 
-db = TinyDB(os.environ.get('dggs_api_config'))
+db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
 collections = db.table('collections').all()
 collections_dict = {}
 
@@ -58,7 +58,7 @@ def test_h3_to_h3_data_retrieval():
     client = TestClient(app)
 
     print("Fail test case with non existing dggrs id")
-    response = client.get(f'/dggs-api/v1-pre/dggs/non_exist/zones/{non_exists[0]}/data')
+    response = client.get(f'/dggs-api/dggs/non_exist/zones/{non_exists[0]}/data')
     assert "not supported" in response.text
     assert response.status_code == 400
 
@@ -69,12 +69,12 @@ def test_h3_to_h3_data_retrieval():
     zone_rf = df_dict['zone_rf']
     over_rf_depth = max_rf - zone_rf + 1
     print(f"Fail test case withdata-retrieval query (h3, {zone['zoneid']}, zone-depth={over_rf_depth}) over refinement")
-    response = client.get(f"/dggs-api/v1-pre/dggs/h3/zones/{zone['zoneid']}/data", params={"zone-depth": over_rf_depth})
+    response = client.get(f"/dggs-api/dggs/h3/zones/{zone['zoneid']}/data", params={"zone-depth": over_rf_depth})
     assert "over refinement" in response.text
     assert response.status_code == 400
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, default zone-depth = 1)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data')
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data')
     assert response.status_code == 200
     data = ZonesDataDggsJsonResponse(**response.json())
     for k, v in data.values.items():
@@ -83,21 +83,21 @@ def test_h3_to_h3_data_retrieval():
         assert len(v[0].data) == 7
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, depth=[0] ,return = geojson)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', headers={'accept': 'application/geo+json'},
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', headers={'accept': 'application/geo+json'},
                           params={'zone-depth': '0'})
     assert response.status_code == 200
     data = ZonesDataGeoJson(**response.json())
     assert len(data.features) > 0
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, depth=0,return = geojson, geometry='zone-centroid')")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', params={'geometry': 'zone-centroid', 'zone-depth': '0'},
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', params={'geometry': 'zone-centroid', 'zone-depth': '0'},
                           headers={'accept': 'application/geo+json'})
     assert response.status_code == 200
     data = ZonesDataGeoJson(**response.json())
     assert len(data.features) > 0
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, zone-depth=2)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '2'})
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '2'})
     data = ZonesDataDggsJsonResponse(**response.json())
     assert response.status_code == 200
     for k, v in data.values.items():
@@ -107,7 +107,7 @@ def test_h3_to_h3_data_retrieval():
     assert response.status_code == 200
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, zone-depth=1-2)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '1-2'})
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '1-2'})
     data = ZonesDataDggsJsonResponse(**response.json())
     assert response.status_code == 200
     zone_depth_counts = [1, 2]
@@ -118,7 +118,7 @@ def test_h3_to_h3_data_retrieval():
             assert len(data.data) > 0
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, zone-depth=0-2)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '0-2'})
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '0-2'})
     data = ZonesDataDggsJsonResponse(**response.json())
     assert response.status_code == 200
     zone_depth_counts = [0, 1, 2]
@@ -130,14 +130,14 @@ def test_h3_to_h3_data_retrieval():
     assert response.status_code == 200
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, zone-depth=0-2, geometry='zone-centroid', return=geojson)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
                           headers={'accept': 'application/geo+json'})
     data = ZonesDataGeoJson(**response.json())
     assert len(data.features) > 0
     assert response.status_code == 200
 
     print(f"Success test case with data-retrieval query (h3, {zone['zoneid']}, zone-depth=0-2, geometry='zone-centroid', return=zarr+zip)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
+    response = client.get(f'/dggs-api/dggs/h3/zones/{zone["zoneid"]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
                           headers={'accept': 'application/zarr+zip'})
     assert response.status_code == 200
     with open("data_zarr.zip", "wb") as f:
@@ -146,7 +146,7 @@ def test_h3_to_h3_data_retrieval():
     print(z.tree())
 
     print(f"Empty test case with data-retrieval query (h3, {non_exists[0]}, zone-depth=0-2, geometry='zone-centroid', return=geojson)")
-    response = client.get(f'/dggs-api/v1-pre/dggs/h3/zones/{non_exists[0]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
+    response = client.get(f'/dggs-api/dggs/h3/zones/{non_exists[0]}/data', params={'zone-depth': '0-2', 'geometry': 'zone-centroid'},
                           headers={'accept': 'application/geo+json'})
     assert response.status_code == 204
 

@@ -8,7 +8,7 @@ logger = logging.getLogger()
 
 
 def get_collection_providers() -> dict[str, CollectionProvider]:
-    db = TinyDB(os.environ.get('dggs_api_config'))
+    db = TinyDB(os.environ.get('DGGS_API_CONFIG'))
     if ('collection_providers' not in db.tables()):
         logger.error(f'{__name__} collection_providers table not found.')
         raise Exception(f'{__name__} collection_providers table not found.')

@@ -37,7 +37,7 @@ micromamba install -c conda-forge dggrid
 3. create local .env file from env.sample 
 
 ```
-dggs_api_config=<Path to TinyDB>
+DGGS_API_CONFIG=<Path to TinyDB>
 DGGRID_PATH=<Path to dggrid executable>
 ```
 
