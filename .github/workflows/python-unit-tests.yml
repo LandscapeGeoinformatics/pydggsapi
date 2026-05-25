@@ -1,0 +1,36 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Run unit tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Pytest
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up micromamba
+      uses: mamba-org/setup-micromamba@v3
+      with:
+        environment-file: micromamba_env.yaml
+        environment-name: pytest
+        cache-environment: true
+        init-shell: bash
+    - name: Install poetry dependencies
+      run: micromamba run -n pytest poetry install
+    - name: Create symbolic link of dggrid
+      run: ln -s ${{ runner.home }}/micromamba/envs/pytest/bin/dggrid tests/dggrid
+    - name: Run Test with pytest
+      run: |
+        cd tests
+        micromamba run -n pytest pytest
