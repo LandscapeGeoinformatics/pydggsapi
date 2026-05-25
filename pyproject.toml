@@ -22,14 +22,14 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.12,<3.14"
 uvicorn = "^0.23.2"
 clickhouse-driver = {extras = ["lz4", "zstd"], version = "^0.2.6"}
 shapely = "^2.0.2"
 morecantile = "^5.0.0"
 mapbox-vector-tile = "^2.0.1"
 pyproj = "^3.6.1"
-clickhouse-cityhash = "^1.0.2.4"
+clickhouse-cityhash = "^1.0.2.5"
 dggrid4py = "^0.5.3"
 python-dotenv = "^1.0.0"
 gunicorn = "^23.0.0"
@@ -47,6 +47,7 @@ py-ubjson = "^0.16.1"
 gcsfs = "^2025.10.0"
 ordered-set = "^4.1.0"
 pytest-env = "^1.6.0"
+zarr = "^3.2.1"
 
 [tool.poetry.group.dev.dependencies]
 bump-my-version = ">=1.2.1"

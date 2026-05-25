@@ -142,7 +142,8 @@ def test_h3_to_h3_data_retrieval():
     assert response.status_code == 200
     with open("data_zarr.zip", "wb") as f:
         f.write(response.content)
-    z = zarr.open('data_zarr.zip')
+    store = zarr.storage.ZipStore("data_zarr.zip", read_only=True)
+    z = zarr.open(store=store, mode="r")
     print(z.tree())
 
     print(f"Empty test case with data-retrieval query (h3, {non_exists[0]}, zone-depth=0-2, geometry='zone-centroid', return=geojson)")

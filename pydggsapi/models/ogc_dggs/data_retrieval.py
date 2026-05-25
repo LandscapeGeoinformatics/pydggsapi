@@ -16,7 +16,6 @@ from pydggsapi.dependencies.api.utils import getCQLAttributes
 
 from starlette.requests import Request
 from fastapi.responses import FileResponse, Response
-from numcodecs import Blosc
 from typing import Any, List, Dict, Optional, Union, cast
 from scipy.stats import mode
 from pygeofilter.ast import AstType
@@ -26,6 +25,7 @@ import shapely
 import tempfile
 import numpy as np
 import zarr
+from zarr.codecs import BloscCodec
 import xarray as xr
 import geopandas as gpd
 import pandas as pd
@@ -196,7 +196,7 @@ def query_zone_data(
     properties, values = {}, {}
     if (returntype == 'application/zarr+zip'):
         tmpfile = tempfile.mkstemp()
-        zipstore = zarr.ZipStore(tmpfile[1], mode='w')
+        zipstore = zarr.storage.ZipStore(tmpfile[1], mode='w')
         datatree = xr.DataTree()
         # zarr_root = zarr.group(zipstore)
     for z, d in sorted(data.items()):  # in case of multiple depths, returned them ascending
@@ -273,7 +273,7 @@ def query_zone_data(
                         data=v[i, :].tolist(),
                     ))
     if (datatree is not None):
-        compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
+        compressor = BloscCodec(cname='zstd', clevel=3, shuffle='bitshuffle')
         encode = {}
         for zone in datatree.groups:
             if (len(datatree[zone].data_vars) > 0):

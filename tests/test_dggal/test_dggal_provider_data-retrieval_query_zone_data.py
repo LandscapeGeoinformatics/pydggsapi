@@ -12,7 +12,6 @@ import geopandas as gpd
 import numpy as np
 import zarr
 
-
 from dggal import Application, pydggal_setup, CRS, ogc, epsg, GeoExtent, Array, GeoPoint
 from dggal import IVEA7H, ISEA7H_Z7, rHEALPix, HEALPix
 
@@ -173,7 +172,8 @@ def test_dggal_data_retrieval():
         assert response.status_code == 200
         with open("data_zarr.zip", "wb") as f:
             f.write(response.content)
-        z = zarr.open('data_zarr.zip')
+        store = zarr.storage.ZipStore("data_zarr.zip", read_only=True)
+        z = zarr.open(store=store, mode="r")
         print(z.tree())
 
         iloc_pos = np.random.randint(0, len(df_dict['non_exist_zoneids']), 1)
