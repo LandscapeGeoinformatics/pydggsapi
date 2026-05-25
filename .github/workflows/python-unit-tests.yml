@@ -29,7 +29,7 @@ jobs:
     - name: Install poetry dependencies
       run: micromamba run -n pytest poetry install
     - name: Create symbolic link of dggrid
-      run: ln -s ${{ runner.home }}/micromamba/envs/pytest/bin/dggrid tests/dggrid
+      run: ln -s $MAMBA_ROOT_PREFIX/envs/pytest/bin/dggrid tests/dggrid
     - name: Run Test with pytest
       run: |
         cd tests
