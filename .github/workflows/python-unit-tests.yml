@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up micromamba
-    - uses: mamba-org/setup-micromamba@v3
+      uses: mamba-org/setup-micromamba@v3
       with:
         environment-file: micromamba_env.yaml
         environment-name: pytest
