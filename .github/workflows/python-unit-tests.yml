@@ -27,8 +27,8 @@ jobs:
         cache-environment: true
         init-shell: bash
     - name: Install poetry dependencies
-      run: poetry install
+      run: micromamba run -n pytest poetry install
     - name: Run Test with pytest
       run: 
         cd tests
-        pytest
+        micromamba run -n pytest pytest
