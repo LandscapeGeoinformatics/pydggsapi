@@ -29,6 +29,6 @@ jobs:
     - name: Install poetry dependencies
       run: micromamba run -n pytest poetry install
     - name: Run Test with pytest
-      run: 
+      run: |
         cd tests
         micromamba run -n pytest pytest
