@@ -496,6 +496,7 @@ async def collection_dggrs_description(
     collections: Annotated[Dict[str, Collection], Depends(_get_collection)],
     dggrs_provider=Depends(_get_dggrs_provider)
 ) -> Union[DggrsDescription, Response]:
+    # the collections should hold all collections defined or the colllection specified by the path variable
     dggrs_description = dggrs.model_copy(deep=True)
     current_url = str(req.url)
     col_id = getattr(dggrs_req, "collectionId", None)
@@ -541,6 +542,9 @@ async def collection_dggrs_zone_info(
     collections: Dict[str, Collection] = Depends(_get_collection),
     collection_provider: Dict[str, AbstractCollectionProvider] = Depends(_get_collection_provider),
 ) -> Union[ZoneInfoResponse, Response]:
+    # the collections should hold all collections defined or the colllection specified by the path variable
+    if (len(collections.keys()) == 0):
+        raise HTTPException(status_code=404, detail=f"f'{__name__} query zones info, there are no collections for querying")
     try:
         info = query_zone_info(zoneinfoReq, req.url, dggrs_description, dggrs_provider, collections, collection_provider)
     except ValueError as e:
@@ -591,6 +595,9 @@ async def collection_list_dggrs_zones(
     collection_provider: Annotated[Dict[str, AbstractCollectionProvider], Depends(_get_collection_provider)],
 ) -> Union[ZonesResponse, ZonesGeoJson, Response]:
 
+    # the collections should hold all collections defined or the colllection specified by the path variable
+    if (len(collections.keys()) == 0):
+        raise HTTPException(status_code=404, detail=f"f'{__name__} query zones list, there are no collections for querying")
     returntype = _get_return_type(req, zone_query_support_returntype, zone_query_support_formats, 'application/json')
     returngeometry = zonesReq.geometry if (zonesReq.geometry is not None) else 'zone-region'
     zone_level = zonesReq.zone_level
@@ -692,6 +699,10 @@ async def collection_dggrs_zones_data(
     collections: Dict[str, Collection] = Depends(_get_collection),
     collection_provider: Dict[str, CollectionProvider] = Depends(_get_collection_provider),
 ) -> ZonesDataDggsJsonResponse | FileResponse | Response:
+
+    # the collections should hold all collections defined or the colllection specified by the path variable
+    if (len(collections.keys()) == 0):
+        raise HTTPException(status_code=404, detail=f"f'{__name__} query zones data, there are no collections for querying")
     returntype = _get_return_type(req, zone_data_support_returntype, zone_data_support_formats, 'application/json')
     zoneId = zonedataReq.zoneId
     depth = zonedataQuery.zone_depth if (zonedataQuery.zone_depth is not None) else [dggrs_description.defaultDepth]

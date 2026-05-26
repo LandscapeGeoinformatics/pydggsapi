@@ -71,8 +71,8 @@ def get_dggrs_descriptions() -> Dict[str, DggrsDescription]:
         logger.error(f"{__name__} {e}")
         raise Exception(f"{__name__} {e}")
     if (len(collections.keys()) == 0):
-        logger.error(f"{__name__} no collections found")
-        raise Exception(f"{__name__} no collections found")
+        logger.warning(f"{__name__} no collections found")
+        # raise Exception(f"{__name__} no collections found")
     dggrs_indexes = db.table('dggrs').all()
     if (len(dggrs_indexes) == 0):
         logger.error(f"{__name__} no dggrs defined.")
