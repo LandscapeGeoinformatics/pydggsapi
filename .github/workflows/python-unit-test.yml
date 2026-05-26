@@ -4,6 +4,8 @@
 name: Run unit test
 
 on:
+  release:
+    types: [published]
   push:
     branches: [ "main" ]
   pull_request:
