@@ -47,6 +47,38 @@ DGGRID_PATH=<Path to dggrid executable>
    export POETRY_DOTENV_LOCATION=.env && poetry run python pydggsapi/main.py 
    ```
 
+
+## Conformance Classes
+
+The API implemented the dggrs-core, zone-query and zone data retrieval conformal class. The following list shows the conformance classes supported by the API. Users can also refer to the [example notebook](https://pydggsapi.readthedocs.io/en/latest/example_notebook/Endpoints_Examples.html) from the pydggsapi documentation for examples of the query endpoints.
+
+| Conformance Class| Supported by the API|
+| ---------------- | ------------------- |
+| http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core | ✅ |
+| http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page | ✅ |
+| http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html | ❌ |
+| http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json | ✅ |
+| http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-retrieval | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-subsetting | partially: `datetime`, `properties` and `exclude-properties`|
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-custom-depths | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-cql2-filter | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-query | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-query-cql2-filter | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/root-dggs | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/collection-dggs | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-json | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-ubjson | ✅ | 
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-dggs-jsonfg | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-dggs-ubjsonfg | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-geojson | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/data-zarr | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-uint64 | ❌ | 
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-geojson | ✅ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/zone-geotiff | ❌ |
+| https://www.opengis.net/spec/ogcapi-dggs-1/1.0/conf/operation-ids | ❌ |
+
+
 ## Mini Howto
 
 ### Collections, Collection Providers and DGGRS providers
