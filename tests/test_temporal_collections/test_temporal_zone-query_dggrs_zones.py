@@ -133,7 +133,7 @@ def test_temporal_zone_query_dggrs_zones():
         print(f"Fail test case for datetime syntax error (igeo, bbox: {non_exist_aoi.bounds}, compact=False)")
         bounds = list(map(str, non_exist_aoi.bounds))
         response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 7,
-                                                                           "compact-zone": False,
+                                                                           "compact-zones": False,
                                                                            "datetime": datetime_error})
         assert response.status_code == 400
 
@@ -152,7 +152,7 @@ def test_temporal_zone_query_dggrs_zones():
                 print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
                         compact=False, datetime: {datetime_string})")
                 response = client.get(f'/dggs-api/dggs/{dggrsid}/zones',
-                                      params={"bbox": ",".join(bounds), "zone-level": rf, "compact-zone": False,
+                                      params={"bbox": ",".join(bounds), "zone-level": rf, "compact-zones": False,
                                               "datetime": datetime_string})
                 if (is_temporal):
                     assert response.status_code == 200

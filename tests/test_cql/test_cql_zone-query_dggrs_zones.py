@@ -148,7 +148,7 @@ def test_cql_zone_query_dggrs_zones():
         print(f"Fail test case for cql syntax error (igeo, bbox: {non_exist_aoi.bounds}, compact=False)")
         bounds = list(map(str, non_exist_aoi.bounds))
         response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 7,
-                                                                           "compact-zone": False,
+                                                                           "compact-zones": False,
                                                                            "filter": cql_error})
         assert response.status_code == 400
 
@@ -176,7 +176,7 @@ def test_cql_zone_query_dggrs_zones():
                         compact=False, cql: {cql_string})")
                 response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
                                                                                         "zone-level": rf,
-                                                                                        "compact-zone": False,
+                                                                                        "compact-zones": False,
                                                                                         "filter": cql_string})
                 print(validation_data)
                 if (validation_data.shape[0] > 0):
@@ -195,7 +195,7 @@ def test_cql_zone_query_dggrs_zones():
                         compact=False, cql: {cql_string})")
                 response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
                                                                                         "zone-level": rf,
-                                                                                        "compact-zone": False,
+                                                                                        "compact-zones": False,
                                                                                         "filter": cql_string})
                 if ("AND" in cql_string):
                     validation_data = dataset[(dataset[column_names[0]] >= test_values[0][0]) &

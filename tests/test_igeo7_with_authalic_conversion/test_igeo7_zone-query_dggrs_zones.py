@@ -87,7 +87,7 @@ def test_zone_query_dggrs_zones():
 
     print(f"Fail test case with dggs zones query (igeo7, bbox: {non_exist_aoi.bounds}, compact=False), missing zone-level")
     bounds = list(map(str, non_exist_aoi.bounds))
-    response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), 'compact-zone': False})
+    response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), 'compact-zones': False})
     assert "zone-level must be specified" in response.text
     assert response.status_code == 400
 
@@ -104,12 +104,12 @@ def test_zone_query_dggrs_zones():
     print(f"Empty test case with dggs zones query (igeo7, bbox: {non_exist_aoi.bounds}, zone_level=8, compact=False, geojson)")
     non_exist_bounds = list(map(str, non_exist_aoi.bounds))
     response = client.get('/dggs-api/dggs/igeo7/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"bbox": ",".join(non_exist_bounds), 'zone-level': 8, 'compact-zone': False})
+                          params={"bbox": ",".join(non_exist_bounds), 'zone-level': 8, 'compact-zones': False})
     assert response.status_code == 204
 
     print(f"Empty test case with dggs zones query (igeo7, parent zone: 055266135, zone_level=8, compact=False, geojson)")
     response = client.get('/dggs-api/dggs/igeo7/zones', headers={'Accept': 'Application/geo+json'},
-                          params={"parent-zone": '055266135', 'zone-level': 8, 'compact-zone': False})
+                          params={"parent-zone": '055266135', 'zone-level': 8, 'compact-zones': False})
     assert response.status_code == 204
 
     for collection_name, df_dict in validation_df.items():
@@ -117,7 +117,7 @@ def test_zone_query_dggrs_zones():
         aoi = rf5_validation_set['aoi']
         print(f"Success test case with dggs zones query (igeo7, bbox: {aoi.bounds}, zone-level=5,compact=False)")
         bounds = list(map(str, aoi.bounds))
-        response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 5, "compact-zone": False})
+        response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), "zone-level": 5, "compact-zones": False})
         zones = ZonesResponse(**response.json())
         return_zones_list = zones.zones
         return_zones_list.sort()
@@ -131,7 +131,7 @@ def test_zone_query_dggrs_zones():
         zone = rf5_validation_set['hex'].iloc[iloc_pos[0]]
         print(f"Success test case with dggs zones query (igeo7, parent zone: {zone['name']}, zone_level=8, compact=False, geojson)")
         response = client.get('/dggs-api/dggs/igeo7/zones', headers={'Accept': 'Application/geo+json'},
-                              params={"parent-zone": zone['name'], 'zone-level': 8, 'compact-zone': False})
+                              params={"parent-zone": zone['name'], 'zone-level': 8, 'compact-zones': False})
         zones_geojson = ZonesGeoJson(**response.json())
         return_features_list = zones_geojson.features
         assert response.status_code == 200
@@ -140,7 +140,7 @@ def test_zone_query_dggrs_zones():
             aoi = validation_set['aoi']
             bounds = list(map(str, aoi.bounds))
             print(f"Success test case with dggs zones query (igeo7, bbox: {aoi.bounds}, zone_level={rf}, compact=False)")
-            response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+            response = client.get('/dggs-api/dggs/igeo7/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zones': False})
             zones = ZonesResponse(**response.json())
             return_zones_list = zones.zones
             return_zones_list.sort()
@@ -152,7 +152,7 @@ def test_zone_query_dggrs_zones():
 
             print(f"Success test case with dggs zones query (igeo7, bbox: {aoi.bounds}, zone_level={rf}, compact=False, geojson)")
             response = client.get('/dggs-api/dggs/igeo7/zones', headers={'Accept': 'Application/geo+json'},
-                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zones': False})
             zones_geojson = ZonesGeoJson(**response.json())
             return_features_list = zones_geojson.features
             geometry = [shapely.from_geojson(json.dumps(f.geometry.__dict__)) for f in return_features_list]

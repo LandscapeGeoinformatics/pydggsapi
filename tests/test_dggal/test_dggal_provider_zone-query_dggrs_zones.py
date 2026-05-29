@@ -97,7 +97,7 @@ def test_dggal_zone_query_dggrs_zones():
         aoi = shapely.box(*df_dict.pop('aoi'))
         print(f"Fail test case with dggs zones query ({dggrsid}, bbox: {non_exist_aoi.bounds}, compact=False), missing zone-level")
         bounds = list(map(str, non_exist_aoi.bounds))
-        response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds), 'compact-zone': False})
+        response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds), 'compact-zones': False})
         assert "zone-level must be specified" in response.text
         assert response.status_code == 400
 
@@ -114,13 +114,13 @@ def test_dggal_zone_query_dggrs_zones():
         print(f"Empty test case with dggs zones query ({dggrsid}, bbox: {non_exist_aoi.bounds}, zone_level=8, compact=False, geojson)")
         non_exist_bounds = list(map(str, non_exist_aoi.bounds))
         response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', headers={'Accept': 'Application/geo+json'},
-                              params={"bbox": ",".join(non_exist_bounds), 'zone-level': 8, 'compact-zone': False})
+                              params={"bbox": ",".join(non_exist_bounds), 'zone-level': 8, 'compact-zones': False})
         assert response.status_code == 204
 
         for rf, validation_set in df_dict.items():
             bounds = list(map(str, aoi.bounds))
             print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, compact=False)")
-            response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+            response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zones': False})
             assert response.status_code == 200
             zones = ZonesResponse(**response.json())
             return_zones_list = zones.zones
@@ -133,12 +133,12 @@ def test_dggal_zone_query_dggrs_zones():
             zone = validation_set['hex'].iloc[iloc_pos[0]]
             print(f"Success test case with dggs zones query ({dggrsid}, parent zone: {zone['zone_id']}, zone_level={rf + 1}, compact=False, geojson)")
             response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', headers={'Accept': 'Application/geo+json'},
-                                  params={"parent-zone": zone['zone_id'], 'zone-level': rf + 1, 'compact-zone': False})
+                                  params={"parent-zone": zone['zone_id'], 'zone-level': rf + 1, 'compact-zones': False})
             assert (response.status_code == 200 or response.status_code == 204)
 
             print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, compact=False, geojson)")
             response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', headers={'Accept': 'Application/geo+json'},
-                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zones': False})
             assert response.status_code == 200
             zones_geojson = ZonesGeoJson(**response.json())
             return_features_list = zones_geojson.features

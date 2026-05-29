@@ -68,7 +68,7 @@ def test_h3_to_igeo7_zone_query_dggrs_zones():
             aoi = validation_set['aoi']
             bounds = list(map(str, aoi.bounds))
             print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level={rf}, compact=False)")
-            response = client.get('/dggs-api/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+            response = client.get('/dggs-api/dggs/h3/zones', params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zoness': False})
             zones = ZonesResponse(**response.json())
             return_zones_list = zones.zones
             return_zones_list.sort()
@@ -79,7 +79,7 @@ def test_h3_to_igeo7_zone_query_dggrs_zones():
 
             print(f"Success test case with dggs zones query (h3, bbox: {aoi.bounds}, zone_level={rf}, compact=False, geojson)")
             response = client.get('/dggs-api/dggs/h3/zones', headers={'Accept': 'Application/geo+json'},
-                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zone': False})
+                                  params={"bbox": ",".join(bounds), 'zone-level': rf, 'compact-zones': False})
             zones_geojson = ZonesGeoJson(**response.json())
             return_features_list = zones_geojson.features
             geometry = [shapely.from_geojson(json.dumps(f.geometry.__dict__)) for f in return_features_list]

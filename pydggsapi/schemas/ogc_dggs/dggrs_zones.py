@@ -77,7 +77,7 @@ class ZonesRequest(CommonBaseModel):
     )
     compact_zone: bool = Field(
         default=True,
-        alias="compact-zone",
+        alias="compact-zones",
         description=(
             "If set to true (default), when the list of DGGS zones to be returned at the requested resolution (zone-level) includes all children of a parent zone,"
             " the parent zone will be returned as a shorthand for that list of children zone.  If set to false, all zones returned will be of the requested zone level."
