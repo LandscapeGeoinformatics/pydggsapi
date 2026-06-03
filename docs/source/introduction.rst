@@ -44,6 +44,8 @@ or install the latest updates from GitHub (under the same virtual environment of
     DGGS_API_CONFIG=<Path to TinyDB>
     DGGRID_PATH=<Path to dggrid executable>
 
+Users can control some pydggsapi settings through environment variables, such as ``DGGS_PREFIX`` to set the pydggsapi prefix for reverse proxy configuration. Users can refer to the :doc:`Appendix </appendix/index>` for more information. 
+
 3. Start the server:
    
 .. code-block:: bash
@@ -56,7 +58,7 @@ Docker build
 
 We have now a Dockerfile (thanks to CRIM/https://github.com/fmigneault) that allows you to easily build and run pydggsapi in a containerized environment.
 
-You can build the docker image using the following command:
+You can build the docker image using the following command at the repository root diretory:
 
 .. code-block:: bash
 
@@ -93,7 +95,7 @@ In order to work with IGEO7 (using `DGGRID <https://github.com/sahrk/DGGRID>`_),
 
 .. code-block:: bash
     
-    dggs_api_config=<Path to TinyDB>
+    DGGS_API_CONFIG=<Path to TinyDB>
     DGGRID_PATH=<Path to dggrid executable>
 
 4. Start the server: 
