@@ -19,6 +19,7 @@ Optional
 Environment variable name      Defautl value                               Description
 ============================== =========================================== ===============================
 WORKERS                        4                                           Uvicorn number of workers
+WORKER_TIMEOUT                 120                                         Uvicorn worker timeout
 BIND                           0.0.0.0:8000                                Uvicorn binding address
 DGGS_PREFIX                    /dggs-api                                   pydggsapi url prefix
 TILES_PREFIX                   /tiles-api                                  pydggsapi MVT tiles url prefix

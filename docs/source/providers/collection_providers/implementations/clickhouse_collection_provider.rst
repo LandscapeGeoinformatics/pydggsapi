@@ -19,12 +19,13 @@ Class initialisation
 Clickhouse prvoider need an extra setting "connection" from the ``datasources`` to define the DB connection:
 
 .. code-block:: json
-    "connection" {
+
+    "connection": {
         "host": "127.0.0.1",
         "user": "default",
         "password": "default",
         "port": 9000
-        "compression": False,
+        "compression": false,
         "database": "default"
     }
 
