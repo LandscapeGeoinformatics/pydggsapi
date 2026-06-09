@@ -172,13 +172,13 @@ def test_cql_zone_query_dggrs_zones():
                     test_value = np.nanmax(tdata)
                     validation_data = dataset[dataset[column_names[0]] <= test_value]
                 cql_string = cql_string.format(var_name=column_names[0], value=test_value)
-                print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
-                        compact=False, cql: {cql_string})")
+                print(f"CQL to test: {cql_string}")
+                print(f"test data: {validation_data}")
+                print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, compact=False")
                 response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
-                                                                                        "zone-level": rf,
-                                                                                        "compact-zones": False,
-                                                                                        "filter": cql_string})
-                print(validation_data)
+                                                                                 "zone-level": rf,
+                                                                                 "compact-zones": False,
+                                                                                 "filter": cql_string})
                 if (validation_data.shape[0] > 0):
                     assert response.status_code == 200
                     zones = ZonesResponse(**response.json())
