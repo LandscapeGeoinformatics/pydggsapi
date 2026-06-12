@@ -28,6 +28,7 @@ logger = logging.getLogger()
 class ZarrDatasourceInfo(AbstractDatasourceInfo):
     filepath: str = ""
     filehandle: object = None
+    storage_options: dict = None
     # the column name of the zone ID, if not given,
     # it is assume to be the same with the zarr group name
     id_col: str = ""
@@ -41,7 +42,8 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
         try:
             for k, v in datasources.items():
                 datasource = ZarrDatasourceInfo(**v)
-                datasource.filehandle = xr.open_datatree(datasource.filepath, engine="zarr", chunks="auto")
+                datasource.filehandle = xr.open_datatree(datasource.filepath, engine="zarr", chunks="auto",
+                                                         storage_options=datasource.storage_options)
                 self.datasources[k] = datasource
         except Exception as e:
             logger.error(f'{__name__} create datasource failed: {e}')

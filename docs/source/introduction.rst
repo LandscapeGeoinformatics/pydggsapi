@@ -37,7 +37,13 @@ or install the latest updates from GitHub (under the same virtual environment of
 
     pip install git+https://github.com/LandscapeGeoinformatics/pydggsapi.git
 
-2. create a local ``.env`` file from the ``env.sample``. Change the environment variables according to your local environment setup. Please refer to the :doc:`configuration </tinydb_configuration/index>` for more details.
+2. Export the ``DGGS_API_CONFIG`` environment vairable in commnd line to specify the path to the TinyDB. 
+
+.. code-block:: bash
+    
+    export DGGS_API_CONFIG=<Path to TinyDB>
+
+or create a local ``.env`` file from the ``env.sample``. Change the environment variables according to your local environment setup. Please refer to the :doc:`configuration </tinydb_configuration/index>` for more details.
 
 .. code-block:: bash
     
