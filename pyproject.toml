@@ -49,6 +49,7 @@ pytest-env = "^1.6.0"
 zarr = "^3.2.1"
 s3fs = ">=2026.2.0,<2027.0.0"
 gcsfs = ">=2026.2.0,<2027.0.0"
+healpix-geo = "^0.1.2"
 
 
 [tool.poetry.group.dev.dependencies]
