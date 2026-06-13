@@ -105,10 +105,16 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                 sql = f"""select {cols} from ds where ("{id_col}" in ({', '.join(f"'{z}'" for z in zoneIds)})) and ({cql_sql}) """
                 zarr_result = xr.Dataset.from_dataframe(ctx.sql(sql).to_pandas().set_index(id_col))
             else:
-                cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderdSet(datasource.data_cols)
+                cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
-                idx_mask = ds[id_col].isin(np.array(zoneIds, dtype=ds[id_col].dtype))
-                zarr_result = ds.sel({id_col: idx_mask})
+                #idx_mask = ds[id_col].isin(np.array(zoneIds, dtype=ds[id_col].dtype))
+                #zarr_result = ds.sel({id_col: idx_mask})
+                # zarr_result = ds.sel({id_col: np.array(zoneIds, dtype=ds[id_col].dtype)}, method="nearest", tolerance=0.5)
+                #zarr_result = zarr_result.drop_duplicates(id_col, keep='first')
+                ctx = xql.XarrayContext()
+                ctx.from_dataset('ds', ds)
+                sql = f"""select * from ds where ("{id_col}" in ({', '.join(f"'{z}'" for z in zoneIds)}))"""
+                zarr_result = xr.Dataset.from_dataframe(ctx.sql(sql).to_pandas().set_index(id_col))
                 zarr_result = zarr_result[cols]
         except Exception as e:
             # Zarr will raise exception if nothing matched
