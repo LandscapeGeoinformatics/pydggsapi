@@ -107,8 +107,10 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             else:
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
-                idx_mask = ds[id_col].isin(np.array(zoneIds, dtype=ds[id_col].dtype))
-                zarr_result = ds.sel({id_col: idx_mask})
+                #idx_mask = ds[id_col].isin(np.array(zoneIds, dtype=ds[id_col].dtype))
+                #zarr_result = ds.sel({id_col: idx_mask})
+                zarr_result = ds.sel({id_col: np.array(zoneIds, dtype=ds[id_col].dtype)}, method="pad")
+                zarr_result = zarr_result.drop_duplicates(id_col, keep='first')
                 zarr_result = zarr_result[cols]
         except Exception as e:
             # Zarr will raise exception if nothing matched
