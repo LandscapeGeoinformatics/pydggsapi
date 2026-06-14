@@ -107,7 +107,10 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             else:
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
-                zarr_result = ds.query({id_col: f'{id_col} in {zoneIds}'})
+                # fuzzy selection to reduce the dataset size
+                zarr_result = ds.sel({id_col: zoneIds}, method='pad').drop_duplicates(id_col)
+                # second selection to make it exact
+                zarr_result = zarr_result.query({id_col: f'{id_col} in {zoneIds}'})
                 zarr_result = zarr_result[cols]
         except Exception as e:
             # Zarr will raise exception if nothing matched
