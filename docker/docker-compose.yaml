@@ -8,13 +8,14 @@ services:
     container_name: pydggsapi_developement
     ports:
       - "8080:8000"
+    env_file: "docker_development.env"
     volumes:
       - dggs_api_config:/opt/local/src/pydggsapi/config
-      - test_data:/opt/local/src/pydggsapi/testing_data
+      - pydggsapi_datasets:/opt/local/src/pydggsapi/testing_data
     develop:
         watch:
             - action: sync
-              path: <abs path to the developement source files>
+              path: /home/github_repo/pydggsapi/pydggsapi
               target: /opt/local/src/pydggsapi/pydggsapi
     command: [
     "sh", "-c",
@@ -33,36 +34,37 @@ services:
     profiles:
       - testing
     build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: integration_tests
-    environment:
-      - NODE_ENV=testing
-      - API_URL=http://api:8080
-    command: npm run test:integration
+        context: ../
+        dockerfile: ./docker/Dockerfile
+    container_name: pydggsapi_pytest
+    command: [ "pytest", "/test"
+    ]
     volumes:
-      - .:/app
-      - /app/node_modules
-    depends_on:
-      api:
-        condition: service_started
+      - pytest_path:/opt/local/src/pydggsapi/tests
+
 
 volumes:
+    pydggsapi_source_path:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: /home/github_repo/pydggsapi/pydggsapi
     dggs_api_config: 
         driver: local
         driver_opts:
             type: none
             o: bind
-            device: <path to DGGS_API_CONFIG file>
-    test_data:
+            device: /home/github_repo/pydggsapi/dev/config
+    pydggsapi_datasets:
         driver: local
         driver_opts:
             type: none
             o: bind
-            device: <path to Collections>
+            device: /home/github_repo/pydggsapi/dev/datasets
     pytest_testcases:
         driver: local
-        driver_opts:
+        driver_opts:	
             type: none
             o: bind
-            device: <path to pytest>
+            device: /home/github_repo/pydggsapi/dev/tests
