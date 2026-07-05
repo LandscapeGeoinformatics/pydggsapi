@@ -104,7 +104,7 @@
         "classname": "zarr_collection_provider.ZarrCollectionProvider",
           "datasources": {
           		"est_topo_dem_10m_elva": {
-	   			"filepath": "datasets_for_testing/est_topo_dem_10m_elva_igeo7_multi_refinement_level_ds.zarr",
+	   			"filepath": "testing_data/est_topo_dem_10m_elva_igeo7_multi_refinement_level_ds.zarr",
 				"id_col": "zone_id",
 				"zone_groups":{
 					"1": "refinement_level_1",
