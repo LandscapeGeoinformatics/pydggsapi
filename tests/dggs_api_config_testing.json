@@ -126,17 +126,17 @@
         "classname": "parquet_collection_provider.ParquetCollectionProvider",
         "datasources": {
           "est_topo_slope_10m_elva": {
-              "filepath": "datasets_for_testing/est_topo_slope_10m_elva_igeo7_multi_refinement_level_ds.parquet",
+              "filepath": "testing_data/est_topo_slope_10m_elva_igeo7_multi_refinement_level_ds.parquet",
 			  "id_col": "zone_id"
 			  
 	      },
 	  "est_topo_slope_10m_elva_healpix": {
-              "filepath": "datasets_for_testing/est_topo_twi_10m_elva_healpix_dggrs_multi_refinement_level_ds.parquet",
+              "filepath": "testing_data/est_topo_twi_10m_elva_healpix_dggrs_multi_refinement_level_ds.parquet",
 			  "id_col": "zone_id"
 			  
 	      },
 	  "est_topo_slope_10m_elva_healpix_temporal": {
-              "filepath": "datasets_for_testing/est_topo_twi_10m_elva_healpix_dggrs_2025_09_23_24.parquet",
+              "filepath": "testing_data/est_topo_twi_10m_elva_healpix_dggrs_2025_09_23_24.parquet",
 			  "id_col": "zone_id",
 			  "datetime_col": "time_stamp"
 	      }

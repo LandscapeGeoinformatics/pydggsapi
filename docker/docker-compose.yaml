@@ -11,15 +11,15 @@ services:
     env_file: "docker_development.env"
     volumes:
       - dggs_api_config:/opt/local/src/pydggsapi/config
-      - pydggsapi_datasets:/opt/local/src/pydggsapi/testing_data
+      - pydggsapi_datasets:/opt/local/src/pydggsapi/demo_data
     develop:
         watch:
             - action: sync
-              path: /home/github_repo/pydggsapi/pydggsapi
+              path: /pydggsapi/pydggsapi
               target: /opt/local/src/pydggsapi/pydggsapi
     command: [
     "sh", "-c",
-    "uvicorn pydggsapi.api:app \
+    "uvicorn pydggsapi.api:app \	
         --reload \
         --host ${PYDGGSAPI_HOST:-0.0.0.0} \
         --port ${PYDGGSAPI_PORT:-8000} \
@@ -37,34 +37,35 @@ services:
         context: ../
         dockerfile: ./docker/Dockerfile
     container_name: pydggsapi_pytest
-    command: [ "pytest", "/test"
-    ]
+    env_file: "docker_pytest.env"
+    command: [ "pytest", "tests/"]
     volumes:
-      - pytest_path:/opt/local/src/pydggsapi/tests
-
+      - dggs_api_config:/opt/local/src/pydggsapi/config
+      - pytest_datasets:/opt/local/src/pydggsapi/testing_data
+      - pytest_testcases:/opt/local/src/pydggsapi/tests
 
 volumes:
-    pydggsapi_source_path:
-        driver: local
-        driver_opts:
-            type: none
-            o: bind
-            device: /home/github_repo/pydggsapi/pydggsapi
     dggs_api_config: 
         driver: local
         driver_opts:
             type: none
             o: bind
-            device: /home/github_repo/pydggsapi/dev/config
+            device: /pydggsapi/config
     pydggsapi_datasets:
         driver: local
         driver_opts:
             type: none
             o: bind
-            device: /home/github_repo/pydggsapi/dev/datasets
+            device: /pydggsapi/demo_dataset
     pytest_testcases:
         driver: local
         driver_opts:	
             type: none
             o: bind
-            device: /home/github_repo/pydggsapi/dev/tests
+            device: /pydggsapi/tests
+    pytest_datasets:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: /pydggsapi/tests/testing_data
