@@ -24,6 +24,7 @@ OGC API - DGGS specifies an API for accessing data organised according to a Disc
    :width: 300
 
 .. toctree::
+   :caption: Getting started
    :glob:
    :hidden:
    
@@ -31,6 +32,25 @@ OGC API - DGGS specifies an API for accessing data organised according to a Disc
    introduction
    Configuration <tinydb_configuration/index>
    providers/index
-   pydggsapi demo notebook <example_notebook/pydggsapi_demo_notebook.ipynb>
+
+.. toctree::
+   :caption: Tutorials
+   :glob:
+   :hidden:
+
+   Demo notebook <example_notebook/pydggsapi_demo_notebook.ipynb>
    API endpoints examples <example_notebook/Endpoints_Examples.ipynb>
+
+.. toctree::
+   :caption: Contributor Guide
+   :glob:
+   :hidden:
+   
+   contribute_to_pydggsapi/index
+
+.. toctree::
+   :caption: Reference Guide
+   :glob:
+   :hidden:
+
    Appendix <appendix/index>
