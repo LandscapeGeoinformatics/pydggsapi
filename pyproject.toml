@@ -102,6 +102,10 @@ pytest-codspeed = "^2.2.0"
 pytest-mypy-plugins = "^3.0.0"
 pytest-xdist = {version = "^3.5.0", extras = ["psutil"]}
 
+
+[tool.poetry.group.benchmarking.dependencies]
+locust = "^2.45.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
