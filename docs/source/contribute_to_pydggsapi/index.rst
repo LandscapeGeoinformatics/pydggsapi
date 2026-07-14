@@ -39,6 +39,24 @@ docker_development.env
 
 Contributors can export any environment variables defined in :doc:`Appendix </appendix/index>` to override the default value. For example, the file name of the dggs_api_config may differ from Docker's default value (`pydggsapi-config.json`). 
 
+Collection paths
+""""""""""""""""
+The volume `pydggsapi_datasets` is mapped to the path `/opt/local/src/pydggsapi/demo_data` of the Docker container; therefore, the collection paths defined in the pydggsapi configuration(DGGS_API_CONFIG) should follow the mapped path, where it should point to `demo_data/<data_source_name>`
+
+For example:
+
+.. code-block:: json
+
+   "est_topo_dem_10m_elva": {
+        "filepath": "demo_data/est_topo_dem_10m_clipped_Elva_igeo7_datatree.zarr",
+        "id_col": "zone_id",
+        "zone_groups":{
+             "1": "refinement_level_1",
+             "2": "refinement_level_2",
+        }
+    }
+
+
 
 Start up the Docker container with `docker-compose.yaml`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -78,6 +96,24 @@ docker_pytest.env
 """"""""""""""""""""""
 
 Contributors can export any environment variables defined in :doc:`Appendix </appendix/index>` to override the default value. For example, the file name of the dggs_api_config may differ from the one used in the development configuration.
+
+Collection paths
+""""""""""""""""
+The volume `pytest_datasets` is mapped to the path `/opt/local/src/pydggsapi/testing_data` of the Docker container; therefore, the collection paths defined in the pydggsapi configuration(DGGS_API_CONFIG) should follow the mapped path, where it should point to `testing_data/<data_source_name>`
+
+For example:
+
+.. code-block:: json
+
+   "est_topo_dem_10m_elva": {
+        "filepath": "testing_data/est_topo_dem_10m_clipped_Elva_igeo7_datatree.zarr",
+        "id_col": "zone_id",
+        "zone_groups":{
+             "1": "refinement_level_1",
+             "2": "refinement_level_2",
+        }
+    }
+
 
 Start up the Docker container with `docker-compose.yaml`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
