@@ -34,17 +34,24 @@ def on_locust_init(environment, **kwargs):
         collection_dggrs = collection_dggrs["dggrs"]
         for dggrs in collection_dggrs:
             if (dggrs["id"].lower() == test_dggrs):
+                print(f"add collection {collection_id} spatial extent")
                 minx, miny, maxx, maxy = collection["extent"]["spatial"]["bbox"][0]
                 aoi = shapely.box(minx, miny, maxx, maxy)
                 if global_bbox is None:
                     global_bbox = shapely.box(minx, miny, maxx, maxy)
                 else:
                     global_bbox = shapely.union(global_bbox, aoi).normalize()
+    if (global_bbox is None):
+        raise ValueError("global_bbox is None")
+    if isinstance(global_bbox, shapely.geometry.MultiPolygon):
+        global_bbox = global_bbox.geoms[0]
     bounds = list(map(str, global_bbox.bounds))
+    print(f"global_bbox bounds : {bounds}")
     zone_ids_list = requests.get(f"{environment.host}/dggs-api/dggs/{test_dggrs}/zones", params={"bbox": ",".join(bounds),
                                                                                                  "zone-level": test_rf,
                                                                                                  "compact-zones": False}).json()
     zone_ids = zone_ids_list["zones"]
+    print(len(zone_ids))
     zone_ids_list = requests.get(f"{environment.host}/dggs-api/dggs/{test_dggrs}/zones", params={"bbox": ",".join(bounds),
                                                                                                  "zone-level": test_rf - zone_depth,
                                                                                                  "compact-zones": False}).json()
@@ -108,7 +115,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids, size=size, replace=False)
         for zone_id in random_zones:
-            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval - single zone (rf={test_rf}, dggrs={test_dggrs}, size={size})",
+            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval (rf={test_rf}, dggrs={test_dggrs}, size={size})",
                             params={"zone-depth": 0})
 
     @tag("zone_data_retrieval")
@@ -122,7 +129,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids, size=size, replace=False)
         for zone_id in random_zones:
-            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval - single zone (geojson, rf={test_rf}, dggrs={test_dggrs}, size={size})",
+            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval (geojson, zone-depth={zone_depth}, rf={test_rf}, dggrs={test_dggrs}, size={size})",
                             headers={'accept': 'application/geo+json'},
                             params={"zone-depth": 0})
 
@@ -138,7 +145,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids_coarser_rf, size=size, replace=False)
         for zone_id in random_zones:
-            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval zone-depth: {zone_depth} (rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
+            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval (zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
                             params={"zone-depth": zone_depth})
 
     @tag("zone_data_retrieval")
@@ -153,7 +160,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids_coarser_rf, size=size, replace=False)
         for zone_id in random_zones:
-            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval - zone-depth: {zone_depth} (geojson, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
+            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval (geojson, zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
                             headers={'accept': 'application/geo+json'},
                             params={"zone-depth": zone_depth})
 
@@ -169,7 +176,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids_coarser_rf, size=size, replace=False)
         for zone_id in random_zones:
-            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval - zone-depth: {zone_depth} (zarr+zip, rf={test_rf - zone_depth} dggrs={test_dggrs}, size={size})",
+            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval (zarr+zip, zone-depth={zone_depth}, rf={test_rf - zone_depth} dggrs={test_dggrs}, size={size})",
                             headers={'accept': 'application/zarr+zip'},
                             params={"zone-depth": zone_depth})
 
@@ -185,6 +192,6 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids_coarser_rf, size=size, replace=False)
         for zone_id in random_zones:
-            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval - zone-depth: {zone_depth} (CQL filter, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
+            self.client.get(f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data", name=f"zone data retrieval (CQL filter, zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
                             params={"zone-depth": zone_depth,
                                     "filter": "band_1 <= 2"})
