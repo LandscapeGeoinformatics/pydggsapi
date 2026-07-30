@@ -61,7 +61,7 @@ def query_zones_list(bbox, zone_level, limit, dggrs_info: DggrsDescription, dggr
         if (converted is not None):
             # The zoneId repr of target_zoneIds and the filtered_zoneIds is aligned, no need to handle
             # and the zoneIds is in original repr (str)
-            filter_ += np.array(converted.zoneIds)[np.isin(converted.target_zoneIds, filtered_zoneIds)].tolist()
+            filter_ = filter_ | set(np.array(converted.zoneIds)[np.isin(converted.target_zoneIds, filtered_zoneIds)].tolist())
         else:
             if (zone_id_repr != 'textual'):
                 filtered_zoneIds = dggrs_provider.zone_id_to_textual(filtered_zoneIds, zone_id_repr, zone_level)
