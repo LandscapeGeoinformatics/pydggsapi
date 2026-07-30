@@ -23,7 +23,7 @@ def query_zones_list(bbox, zone_level, limit, dggrs_info: DggrsDescription, dggr
     logger.debug(f'{__name__} query zones list: {bbox}, {zone_level}, {limit}, {parent_zone}, {compact}')
     # generate zones for the bbox at the required zone_level
     result = dggrs_provider.zoneslist(bbox, zone_level, parent_zone, returngeometry, compact)
-    filter_ = []
+    filter_ = set([])
     cql_attributes = set() if (cql_filter is None) else getCQLAttributes(cql_filter)
     skipped = 0
     for k, v in collection.items():
@@ -61,11 +61,12 @@ def query_zones_list(bbox, zone_level, limit, dggrs_info: DggrsDescription, dggr
         if (converted is not None):
             # The zoneId repr of target_zoneIds and the filtered_zoneIds is aligned, no need to handle
             # and the zoneIds is in original repr (str)
-            filter_ += np.array(converted.zoneIds)[np.isin(converted.target_zoneIds, filtered_zoneIds)].tolist()
+            filter_ = filter_ | set(np.array(converted.zoneIds)[np.isin(converted.target_zoneIds, filtered_zoneIds)].tolist())
         else:
             if (zone_id_repr != 'textual'):
                 filtered_zoneIds = dggrs_provider.zone_id_to_textual(filtered_zoneIds, zone_id_repr, zone_level)
-            filter_ += filtered_zoneIds
+            filter_ = filter_ | set(filtered_zoneIds)
+    filter_ = list(filter_)
     if (skipped == len(collection)):
         raise ValueError(f"{__name__} query zones list cql attributes({cql_attributes}) not found in all collections.")
     if (len(filter_) == 0):
@@ -76,4 +77,4 @@ def query_zones_list(bbox, zone_level, limit, dggrs_info: DggrsDescription, dggr
                     for i, zid in enumerate(result.zones[:limit]) if (zid in filter_)]
         return ZonesGeoJson(**{'type': 'FeatureCollection', 'features': features})
     total_area = sum(np.array(result.returnedAreaMetersSquare)[np.isin(result.zones, filter_)].tolist())
-    return ZonesResponse(**{'zones': np.unique(filter_[:limit]), 'returnedAreaMetersSquare': total_area})
+    return ZonesResponse(**{'zones': filter_[:limit], 'returnedAreaMetersSquare': total_area})
