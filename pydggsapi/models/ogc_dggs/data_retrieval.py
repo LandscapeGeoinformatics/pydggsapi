@@ -248,7 +248,7 @@ def query_zone_data(
             # data_dims is responsible for the dimension of dggs json return
             data_dims = {dim.name: dim.grid.cellsCount for dim in zone_level_dims[z]} if (len(zone_level_dims.keys()) > 0) else {}
             # coords is responsible for the coordinates of zarr return
-            coords = {"zoneId": np.unique(zoneIds), "datetime": zone_datetimes} if (zone_datetimes is not None) else {"zoneId": zoneIds}
+            coords = {"zoneId": np.unique(zoneIds), "datetime": np.unique(zone_datetimes)} if (zone_datetimes is not None) else {"zoneId": zoneIds}
             for i, column in enumerate(d.index):
                 if (datatree is not None):
                     if (f"/zone_level_{z}" not in datatree.groups):
