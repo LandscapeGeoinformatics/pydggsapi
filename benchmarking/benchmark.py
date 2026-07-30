@@ -63,11 +63,11 @@ def on_locust_init(environment, **kwargs):
     if (test_collection is not None):
         zone_query_url = f"{environment.host}/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones"
     zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
-                                                         "compact-zones": False}).json()
+                                                         "compact-zones": False, "limit": 10000000}).json()
     zone_ids = zone_ids_list["zones"]
     print(len(zone_ids))
     zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf - zone_depth,
-                                                         "compact-zones": False}).json()
+                                                         "compact-zones": False, "limit": 10000000}).json()
     zone_ids_coarser_rf = zone_ids_list["zones"]
     print(len(zone_ids_coarser_rf))
 
@@ -89,7 +89,8 @@ class BenchmarkingZoneQuery(HttpUser):
         self.client.get(zone_query_url, name=f"zone_query (rf={test_rf}, dggrs={test_dggrs})",
                         params={"bbox": ",".join(bounds),
                                 "zone-level": test_rf,
-                                "compact-zones": False})
+                                "compact-zones": False,
+                                "limit": 10000000})
 
     @tag("zone_query")
     @task
@@ -106,7 +107,8 @@ class BenchmarkingZoneQuery(HttpUser):
                         headers={'Accept': 'Application/geo+json'},
                         params={"bbox": ",".join(bounds),
                                 "zone-level": test_rf,
-                                "compact-zones": False})
+                                "compact-zones": False,
+                                "limit": 10000000})
 
     @tag("zone_query")
     @task
@@ -123,7 +125,8 @@ class BenchmarkingZoneQuery(HttpUser):
                         params={"bbox": ",".join(bounds),
                                 "zone-level": test_rf,
                                 "compact-zones": False,
-                                "filter": "band_1 <= 2"})
+                                "filter": "band_1 <= 2",
+                                "limit": 10000000})
 
 
 class BenchmarkingZoneDataRetrieval(HttpUser):
@@ -162,7 +165,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
             zone_data_retrieval_url = f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data"
             if (test_collection is not None):
                 zone_data_retrieval_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones/{zone_id}/data"
-            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (geojson, zone-depth={zone_depth}, rf={test_rf}, dggrs={test_dggrs}, size={size})",
+            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (geojson, rf={test_rf}, dggrs={test_dggrs}, size={size})",
                             headers={'accept': 'application/geo+json'},
                             params={"zone-depth": 0})
 
