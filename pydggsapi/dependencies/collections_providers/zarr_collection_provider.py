@@ -54,7 +54,8 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                  include_properties: List[str] = None,
                  exclude_properties: List[str] = None,
                  input_zoneIds_padding: bool = True,
-                 collection_timestamp: datetime = None) -> CollectionProviderGetDataReturn:
+                 collection_timestamp: datetime = None,
+                 check_if_exists_only: bool = False) -> CollectionProviderGetDataReturn:
         result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
         # For non-temporal datasources with the collection_timestamp is set
         # The datetime_col is set to `collection_timestamp` to indicate the datetime is comming from collection
@@ -114,6 +115,10 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             logger.error(f'{__name__} {datasource_id} sel failed: {e}')
             return result
         if (zarr_result[id_col].size == 0):
+            return result
+        if (check_if_exists_only):
+            zarr_result = zarr_result.to_dataframe().reset_index()
+            result.zoneIds = zarr_result[id_col].tolist()
             return result
         if ('spatial_ref' in list(zarr_result.coords.keys())):
             zarr_result = zarr_result.drop('spatial_ref')
