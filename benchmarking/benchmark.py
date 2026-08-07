@@ -3,7 +3,7 @@ import requests
 import math
 import numpy as np
 from locust import events
-from locust import HttpUser, task, between, tag
+from locust import HttpUser, SequentialTaskSet, between, tag, task
 
 global_bbox = None
 zone_ids = []
@@ -17,6 +17,7 @@ def _(parser):
     parser.add_argument("--test-rf", type=int, env_var="zone_level", default=10, help="The zone level parameter to use in zone query / zone data retrieval")
     parser.add_argument("--test-size", type=int, env_var="test_size", default=20, help="Nnumber of zones in percentage to test in zone data retrieval")
     parser.add_argument("--test-dggrs", type=str, env_var="test_dggrs", default="igeo7", help="DGGRS ID")
+    parser.add_argument("--test-cql", type=str, env_var="test_cql", default=None, help="The CQL uses in zone data retrieval (with zone-depth)")
 
 
 @events.init.add_listener
@@ -62,20 +63,20 @@ def on_locust_init(environment, **kwargs):
     zone_query_url = f"{environment.host}/dggs-api/dggs/{test_dggrs}/zones"
     if (test_collection is not None):
         zone_query_url = f"{environment.host}/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones"
-    zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
-                                                         "compact-zones": False, "limit": 10000000}).json()
-    zone_ids = zone_ids_list["zones"]
-    print(len(zone_ids))
-    zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf - zone_depth,
-                                                         "compact-zones": False, "limit": 10000000}).json()
-    zone_ids_coarser_rf = zone_ids_list["zones"]
-    print(len(zone_ids_coarser_rf))
+    #print(global_bbox)
+    #zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
+    #                                                     "compact-zones": False, "limit": 10000000}).json()
+    #zone_ids = zone_ids_list["zones"]
+    #print(len(zone_ids))
+    #zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf - zone_depth,
+    #                                                     "compact-zones": False, "limit": 10000000}).json()
+    #zone_ids_coarser_rf = zone_ids_list["zones"]
+    #print(len(zone_ids_coarser_rf))
 
 
 class BenchmarkingZoneQuery(HttpUser):
     wait_time = between(1, 5)
 
-    @tag("zone_query")
     @task
     def zone_query(self):
         global global_bbox
@@ -92,7 +93,6 @@ class BenchmarkingZoneQuery(HttpUser):
                                 "compact-zones": False,
                                 "limit": 10000000})
 
-    @tag("zone_query")
     @task
     def zones_query_geojson_return(self):
         global global_bbox
@@ -110,23 +110,25 @@ class BenchmarkingZoneQuery(HttpUser):
                                 "compact-zones": False,
                                 "limit": 10000000})
 
-    @tag("zone_query")
     @task
     def zones_query_cql(self):
         global global_bbox
         test_rf = self.environment.parsed_options.test_rf
         test_dggrs = self.environment.parsed_options.test_dggrs
         test_collection = self.environment.parsed_options.test_collection
+        test_cql = self.environment.parsed_options.test_cql
         bounds = list(map(str, global_bbox.bounds))
         zone_query_url = f"/dggs-api/dggs/{test_dggrs}/zones"
+        params = {"bbox": ",".join(bounds),
+                  "zone-level": test_rf,
+                  "compact-zones": False,
+                  "limit": 10000000}
+        if (test_cql is not None):
+            params.update({"filter": test_cql})
         if (test_collection is not None):
             zone_query_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones"
         self.client.get(zone_query_url, name=f"zone query CQL (rf={test_rf}, dggrs={test_dggrs})",
-                        params={"bbox": ",".join(bounds),
-                                "zone-level": test_rf,
-                                "compact-zones": False,
-                                "filter": "band_1 <= 2",
-                                "limit": 10000000})
+                        params=params)
 
 
 class BenchmarkingZoneDataRetrieval(HttpUser):
@@ -169,7 +171,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
                             headers={'accept': 'application/geo+json'},
                             params={"zone-depth": 0})
 
-    @tag("zone_data_retrieval")
+    @tag("zone_data_retrieval_zone_depth")
     @task
     def zone_data_retrieval_zone_depth(self):
         global zone_ids_coarser_rf
@@ -189,7 +191,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
             self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
                             params={"zone-depth": zone_depth})
 
-    @tag("zone_data_retrieval")
+    @tag("zone_data_retrieval_zone_depth")
     @task
     def zone_data_retrieval_zone_depth_geojson(self):
         global zone_ids_coarser_rf
@@ -209,7 +211,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
                             headers={'accept': 'application/geo+json'},
                             params={"zone-depth": zone_depth})
 
-    @tag("zone_data_retrieval")
+    @tag("zone_data_retrieval_zone_depth")
     @task
     def zone_data_retrieval_zone_depth_zarr(self):
         global zone_ids_coarser_rf
@@ -230,7 +232,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
                             headers={'accept': 'application/zarr+zip'},
                             params={"zone-depth": zone_depth})
 
-    @tag("zone_data_retrieval")
+    @tag("zone_data_retrieval_zone_depth")
     @task
     def zone_data_retrieval_zone_depth_cql(self):
         global zone_ids_coarser_rf, zone_depth
@@ -239,13 +241,18 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
         test_dggrs = self.environment.parsed_options.test_dggrs
         test_rf = self.environment.parsed_options.test_rf
         test_collection = self.environment.parsed_options.test_collection
+        test_cql = self.environment.parsed_options.test_cql
         size = math.floor(len(zone_ids_coarser_rf) * (test_size_percentage / 100))
         size = 1 if (size == 0) else size
         random_zones = np.random.choice(zone_ids_coarser_rf, size=size, replace=False)
+        params = {"zone-depth": zone_depth}
+        if (test_cql is not None):
+            params.update({"filter": test_cql})
         for zone_id in random_zones:
             zone_data_retrieval_url = f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data"
             if (test_collection is not None):
                 zone_data_retrieval_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones/{zone_id}/data"
             self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (CQL filter, zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
-                            params={"zone-depth": zone_depth,
-                                    "filter": "band_1 <= 2"})
+                            params=params)
+
+
