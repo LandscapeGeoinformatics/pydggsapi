@@ -54,7 +54,8 @@ def query_zones_list(bbox, zone_level, limit, dggrs_info: DggrsDescription, dggr
             filtered_zoneIds = collection_provider[cp_id].get_data(converted_zones, converted_level,
                                                                    datasource_id, cql_filter, include_datetime,
                                                                    input_zoneIds_padding=False,
-                                                                   collection_timestamp=v.timestamp).zoneIds
+                                                                   collection_timestamp=v.timestamp,
+                                                                   check_if_exists_only=True).zoneIds
         except DatetimeNotDefinedError:
             filtered_zoneIds = []
             pass

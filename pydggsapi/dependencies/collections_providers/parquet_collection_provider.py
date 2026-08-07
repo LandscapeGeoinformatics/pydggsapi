@@ -56,7 +56,8 @@ class ParquetCollectionProvider(AbstractCollectionProvider):
                  include_properties: List[str] = None,
                  exclude_properties: List[str] = None,
                  input_zoneIds_padding: bool = True,
-                 collection_timestamp: datetime = None) -> CollectionProviderGetDataReturn:
+                 collection_timestamp: datetime = None,
+                 check_if_exists_only: bool = False) -> CollectionProviderGetDataReturn:
         result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
         try:
             datasource = self.datasources[datasource_id]
@@ -120,7 +121,9 @@ class ParquetCollectionProvider(AbstractCollectionProvider):
         # empty result can be skipped entirely
         if result_df.size == 0:
             return result
-
+        if check_if_exists_only:
+            result.zoneIds = result_df[datasource.id_col].to_list()
+            return result
         cols_meta = {k: v.name for k, v in dict(result_df.dtypes).items() if k != datasource.id_col}
         cols_dims = None
         zone_dates = None
