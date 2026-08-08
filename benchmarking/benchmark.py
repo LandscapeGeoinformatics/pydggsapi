@@ -14,6 +14,7 @@ zone_ids_coarser_rf = []
 def _(parser):
     parser.add_argument("--zone-depth", type=int, env_var="zone_depth", default=2, help="The zone-depth parameter to use in zone data retrieval")
     parser.add_argument("--test-collection", type=str, env_var="test_collection", default=None, help="The collection to benchmark")
+    parser.add_argument("--test-bbox", type=float, nargs="+", env_var="test_bbox", default=None, help="The bbox to benchmark (minx, miny, maxx, maxy)")
     parser.add_argument("--test-rf", type=int, env_var="zone_level", default=10, help="The zone level parameter to use in zone query / zone data retrieval")
     parser.add_argument("--test-size", type=int, env_var="test_size", default=20, help="Nnumber of zones in percentage to test in zone data retrieval")
     parser.add_argument("--test-dggrs", type=str, env_var="test_dggrs", default="igeo7", help="DGGRS ID")
@@ -26,34 +27,38 @@ def on_locust_init(environment, **kwargs):
     global global_bbox, zone_ids, zone_ids_coarser_rf
     test_rf = environment.parsed_options.test_rf
     test_collection = environment.parsed_options.test_collection
+    test_bbox = environment.parsed_options.test_bbox
     zone_depth = environment.parsed_options.zone_depth
     test_dggrs = environment.parsed_options.test_dggrs
     collections = requests.get(f"{environment.host}/dggs-api/collections").json()
     collections = collections["collections"]
-    for collection in collections:
-        # only consider the first bbox.
-        if (test_collection is None):
-            collection_id = collection["id"]
-            collection_dggrs = requests.get(f"{environment.host}/dggs-api/collections/{collection_id}/dggs").json()
-            collection_dggrs = collection_dggrs["dggrs"]
-            for dggrs in collection_dggrs:
-                if (dggrs["id"].lower() == test_dggrs):
-                    print(f"add collection {collection_id} spatial extent")
-                    minx, miny, maxx, maxy = collection["extent"]["spatial"]["bbox"][0]
-                    aoi = shapely.box(minx, miny, maxx, maxy)
-                    if global_bbox is None:
+    if (test_bbox is None):
+        for collection in collections:
+            # only consider the first bbox.
+            if (test_collection is None):
+                collection_id = collection["id"]
+                collection_dggrs = requests.get(f"{environment.host}/dggs-api/collections/{collection_id}/dggs").json()
+                collection_dggrs = collection_dggrs["dggrs"]
+                for dggrs in collection_dggrs:
+                    if (dggrs["id"].lower() == test_dggrs):
+                        print(f"add collection {collection_id} spatial extent")
+                        minx, miny, maxx, maxy = collection["extent"]["spatial"]["bbox"][0]
+                        aoi = shapely.box(minx, miny, maxx, maxy)
+                        if global_bbox is None:
+                            global_bbox = shapely.box(minx, miny, maxx, maxy)
+                        else:
+                            global_bbox = shapely.union(global_bbox, aoi).normalize()
+            elif (test_collection == collection["id"]):
+                collection_dggrs = requests.get(f"{environment.host}/dggs-api/collections/{test_collection}/dggs").json()
+                collection_dggrs = collection_dggrs["dggrs"]
+                for dggrs in collection_dggrs:
+                    if (dggrs["id"].lower() == test_dggrs):
+                        print(f"add collection {test_collection} spatial extent")
+                        minx, miny, maxx, maxy = collection["extent"]["spatial"]["bbox"][0]
+                        aoi = shapely.box(minx, miny, maxx, maxy)
                         global_bbox = shapely.box(minx, miny, maxx, maxy)
-                    else:
-                        global_bbox = shapely.union(global_bbox, aoi).normalize()
-        elif (test_collection == collection["id"]):
-            collection_dggrs = requests.get(f"{environment.host}/dggs-api/collections/{test_collection}/dggs").json()
-            collection_dggrs = collection_dggrs["dggrs"]
-            for dggrs in collection_dggrs:
-                if (dggrs["id"].lower() == test_dggrs):
-                    print(f"add collection {test_collection} spatial extent")
-                    minx, miny, maxx, maxy = collection["extent"]["spatial"]["bbox"][0]
-                    aoi = shapely.box(minx, miny, maxx, maxy)
-                    global_bbox = shapely.box(minx, miny, maxx, maxy)
+    else:
+        global_bbox = shapely.box(*test_bbox)
     if (global_bbox is None):
         raise ValueError("global_bbox is None")
     if isinstance(global_bbox, shapely.geometry.MultiPolygon):
@@ -63,15 +68,17 @@ def on_locust_init(environment, **kwargs):
     zone_query_url = f"{environment.host}/dggs-api/dggs/{test_dggrs}/zones"
     if (test_collection is not None):
         zone_query_url = f"{environment.host}/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones"
-    #print(global_bbox)
-    #zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
-    #                                                     "compact-zones": False, "limit": 10000000}).json()
-    #zone_ids = zone_ids_list["zones"]
-    #print(len(zone_ids))
-    #zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf - zone_depth,
-    #                                                     "compact-zones": False, "limit": 10000000}).json()
-    #zone_ids_coarser_rf = zone_ids_list["zones"]
-    #print(len(zone_ids_coarser_rf))
+    user_classes = [c.__name__ for c in environment.user_classes]
+    if ("BenchmarkingZoneDataRetrieval" in user_classes):
+        print("here")
+        zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
+                                                             "compact-zones": False, "limit": 10000000}).json()
+        zone_ids = zone_ids_list["zones"]
+        print(len(zone_ids))
+        zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf - zone_depth,
+                                                             "compact-zones": False, "limit": 10000000}).json()
+        zone_ids_coarser_rf = zone_ids_list["zones"]
+        print(len(zone_ids_coarser_rf))
 
 
 class BenchmarkingZoneQuery(HttpUser):
