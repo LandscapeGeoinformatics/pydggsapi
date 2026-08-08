@@ -18,7 +18,7 @@ class DGGRSProviderZoneInfoReturn(BaseModel):
 
 
 class DGGRSProviderZonesListReturn(BaseModel):
-    geometry: List[GeoJSONPolygon] | List[GeoJSONPoint]
+    geometry: List[GeoJSONPolygon] | List[GeoJSONPoint] | None
     zones: List[str] | List[int]
     returnedAreaMetersSquare: List[float]
 
