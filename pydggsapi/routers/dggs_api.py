@@ -599,7 +599,10 @@ async def collection_list_dggrs_zones(
     if (len(collections.keys()) == 0):
         raise HTTPException(status_code=404, detail=f"f'{__name__} query zones list, there are no collections for querying")
     returntype = _get_return_type(req, zone_query_support_returntype, zone_query_support_formats, 'application/json')
-    returngeometry = zonesReq.geometry if (zonesReq.geometry is not None) else 'zone-region'
+    if (returntype == "application/json"):
+        returngeometry = None
+    else:
+        returngeometry = zonesReq.geometry if (zonesReq.geometry is not None) else 'zone-region'
     zone_level = zonesReq.zone_level
     compact_zone = zonesReq.compact_zone if (zonesReq.compact_zone is not None) else True
     limit = zonesReq.limit if (zonesReq.limit is not None) else 100000

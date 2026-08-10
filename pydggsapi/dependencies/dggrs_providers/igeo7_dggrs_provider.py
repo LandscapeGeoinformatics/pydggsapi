@@ -165,8 +165,8 @@ class IGEO7Provider(AbstractDGGRSProvider):
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
     def hexagon_from_cellid(self, cellid: List[str], zone_level, clip_subset_type='WHOLE_EARTH', clip_cell_res=1):
-        gdf = self.dggrid_instance.grid_cell_polygons_from_cellids(cellid, self.dggrs,
-                                                                   zone_level, clip_subset_type=clip_subset_type,
+        gdf = self.dggrid_instance.grid_cell_polygons_from_cellids(cellid, self.dggrs, zone_level,
+                                                                   clip_subset_type=clip_subset_type,
                                                                    clip_cell_res=clip_cell_res,
                                                                    **self.properties.__dict__)
         gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
@@ -175,13 +175,13 @@ class IGEO7Provider(AbstractDGGRSProvider):
     def cellid_from_centroid(self, geodf_points_wgs84, zoomlevel):
         geodf_points_wgs84 = _geodetic_to_authalic(geodf_points_wgs84, self.wgs84_geodetic_conversion)
         gdf = self.dggrid_instance.cells_for_geo_points(geodf_points_wgs84, True, self.dggrs, zoomlevel, **self.properties.__dict__)
-        gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+        # gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
         return gdf
 
     def cellids_from_extent(self, clip_geom, zoomlevel):
         clip_geom = _geodetic_to_authalic(clip_geom, self.wgs84_geodetic_conversion)[0]
         gdf = self.dggrid_instance.grid_cellids_for_extent(self.dggrs, zoomlevel, clip_geom=clip_geom, **self.properties.__dict__)
-        gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+        # gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
         return gdf
 
     def zone_id_from_textual(self, cellIds: List[str], zone_id_repr: str) -> List[Any]:
@@ -261,10 +261,14 @@ class IGEO7Provider(AbstractDGGRSProvider):
                                               'centroids': centroids, 'geometry': geometry, 'bbox': bbox,
                                               'areaMetersSquare': self.data[zone_level]["Area (km^2)"] * 1000000})
 
-    def zoneslist(self, bbox: Union[box, None], zone_level: int, parent_zone: Union[str, int, None], returngeometry: str, compact=True):
+    def zoneslist(self, bbox: Union[box, None],
+                  zone_level: int, parent_zone: Union[str, int, None],
+                  returngeometry: ReturnGeometryTypes, compact=True):
+
         if (bbox is not None):
             try:
-                hex_gdf = self.generate_hexgrid(bbox, zone_level)
+                hex_gdf = self.generate_hexcentroid(bbox, zone_level)
+                hex_gdf.set_index("name", inplace=True)
             except Exception as e:
                 logger.error(f'{__name__} query zones list, bbox: {bbox} dggrid convert failed :{e}')
                 raise Exception(f"{__name__} query zones list, bbox: {bbox} dggrid convert failed {e}")
@@ -272,8 +276,8 @@ class IGEO7Provider(AbstractDGGRSProvider):
         if (parent_zone is not None):
             try:
                 parent_zone_level = self.get_cells_zone_level([parent_zone])[0]
-                childern_hex_gdf = self.hexagon_from_cellid([parent_zone], zone_level, clip_subset_type='COARSE_CELLS',
-                                                            clip_cell_res=parent_zone_level)
+                childern_hex_gdf = self.centroid_from_cellid([parent_zone], zone_level, clip_subset_type='COARSE_CELLS',
+                                                             clip_cell_res=parent_zone_level)
                 childern_hex_gdf.set_index('name', inplace=True)
                 hex_gdf = hex_gdf.join(childern_hex_gdf, how='inner', rsuffix='_p') if (bbox is not None) else childern_hex_gdf
             except Exception as e:
@@ -302,12 +306,15 @@ class IGEO7Provider(AbstractDGGRSProvider):
                     i = -1
             hex_gdf = hex_gdf.drop_duplicates(subset=['name']).set_index('name')
             logger.info(f'{__name__} query zones list, compact : {len(hex_gdf)}')
-        if (returngeometry != 'zone-region'):
-            hex_gdf = self.centroid_from_cellid(hex_gdf.index.values, zone_level)
+        geometry = None
+        if (returngeometry is not None):
+            if (returngeometry != 'zone-centroid'):
+                hex_gdf = self.hexagon_from_cellid(hex_gdf.index.values, zone_level)
+                hex_gdf.set_index("name", inplace=True)
+            geotype = GeoJSONPoint if (returngeometry == 'zone-centroid') else GeoJSONPolygon
+            geometry = [geotype(**eval(shapely.to_geojson(g))) for g in hex_gdf['geometry'].values.tolist()]
         area = [self.data[zone_level]['Area (km^2)'] * 1000000] * len(hex_gdf)
-        geotype = GeoJSONPolygon if (returngeometry == 'zone-region') else GeoJSONPoint
-        geometry = [geotype(**eval(shapely.to_geojson(g))) for g in hex_gdf['geometry'].values.tolist()]
-        hex_gdf.reset_index(inplace=True)
-        return DGGRSProviderZonesListReturn(**{'zones': hex_gdf['name'].values.astype(str).tolist(),
+        # hex_gdf.reset_index(inplace=True)
+        return DGGRSProviderZonesListReturn(**{'zones': hex_gdf.index.values.astype(str).tolist(),
                                                'geometry': geometry,
                                                'returnedAreaMetersSquare': area})

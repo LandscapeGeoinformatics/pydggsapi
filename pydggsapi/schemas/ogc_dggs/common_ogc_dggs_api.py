@@ -6,7 +6,7 @@ from pydggsapi.schemas.common_basemodel import CommonBaseModel, OmitIfNone
 from pydggsapi.schemas.common_geojson import GeoJSONPoint, GeoJSONPolygon
 from fastapi import Query
 
-ReturnGeometryTypes = Literal['zone-centroid', 'zone-region']
+ReturnGeometryTypes = Literal['zone-centroid', 'zone-region', None]
 
 
 class LinkBase(CommonBaseModel):
