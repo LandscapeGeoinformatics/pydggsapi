@@ -12,11 +12,11 @@ from pygeofilter.ast import AstType
 from pygeofilter.backends.sql import to_sql_where
 from ordered_set import OrderedSet
 import xarray as xr
-import xarray_sql as xql
+from xarray_sql import read_xarray_table
+from datafusion import SessionContext
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from copy import deepcopy
 from typing import List, Any
 from dataclasses import dataclass
 import logging
@@ -89,8 +89,12 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                 if (include_datetime):
                     fieldmapping.update({zone_datetime_placeholder: datetime_col})
                 cql_sql = to_sql_where(cql_filter, fieldmapping)
-                ctx = xql.XarrayContext()
-                ctx.from_dataset('ds', ds)
+                #ctx = xql.XarrayContext()
+                #ctx.from_dataset('ds', ds)
+                table = read_xarray_table(ds)
+                ctx = SessionContext()
+                ctx.register_table('ds', table)
+
                 if ("*" in datasource.data_cols):
                     incl = ",".join(include_properties) if include_properties else "*"
                     excl = datasource.exclude_data_cols or []
