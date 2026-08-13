@@ -70,7 +70,6 @@ def on_locust_init(environment, **kwargs):
         zone_query_url = f"{environment.host}/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones"
     user_classes = [c.__name__ for c in environment.user_classes]
     if ("BenchmarkingZoneDataRetrieval" in user_classes):
-        print("here")
         zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
                                                              "compact-zones": False, "limit": 10000000}).json()
         zone_ids = zone_ids_list["zones"]
