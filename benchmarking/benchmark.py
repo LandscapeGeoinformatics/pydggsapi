@@ -74,7 +74,7 @@ def on_locust_init(environment, **kwargs):
                                                              "compact-zones": False, "limit": 10000000}).json()
         zone_ids = zone_ids_list["zones"]
         print(len(zone_ids))
-        zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf - zone_depth,
+        zone_ids_list = requests.get(zone_query_url, params={"bbox": ",".join(bounds), "zone-level": test_rf,
                                                              "compact-zones": False, "limit": 10000000}).json()
         zone_ids_coarser_rf = zone_ids_list["zones"]
         print(len(zone_ids_coarser_rf))
@@ -160,7 +160,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
             zone_data_retrieval_url = f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data"
             if (test_collection is not None):
                 zone_data_retrieval_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones/{zone_id}/data"
-            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
+            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (zone-depth={zone_depth}, rf={test_rf}, dggrs={test_dggrs}, size={size})",
                             params={"zone-depth": zone_depth})
 
     @tag("case_2")
@@ -179,7 +179,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
             zone_data_retrieval_url = f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data"
             if (test_collection is not None):
                 zone_data_retrieval_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones/{zone_id}/data"
-            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (geojson, zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
+            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (geojson, zone-depth={zone_depth}, rf={test_rf}, dggrs={test_dggrs}, size={size})",
                             headers={'accept': 'application/geo+json'},
                             params={"zone-depth": zone_depth})
 
@@ -200,7 +200,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
             zone_data_retrieval_url = f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data"
             if (test_collection is not None):
                 zone_data_retrieval_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones/{zone_id}/data"
-            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (zarr+zip, zone-depth={zone_depth}, rf={test_rf - zone_depth} dggrs={test_dggrs}, size={size})",
+            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (zarr+zip, zone-depth={zone_depth}, rf={test_rf} dggrs={test_dggrs}, size={size})",
                             headers={'accept': 'application/zarr+zip'},
                             params={"zone-depth": zone_depth})
 
@@ -224,7 +224,7 @@ class BenchmarkingZoneDataRetrieval(HttpUser):
             zone_data_retrieval_url = f"/dggs-api/dggs/{test_dggrs}/zones/{zone_id}/data"
             if (test_collection is not None):
                 zone_data_retrieval_url = f"/dggs-api/collections/{test_collection}/dggs/{test_dggrs}/zones/{zone_id}/data"
-            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (CQL filter, zone-depth={zone_depth}, rf={test_rf - zone_depth}, dggrs={test_dggrs}, size={size})",
+            self.client.get(zone_data_retrieval_url, name=f"zone data retrieval (CQL filter, zone-depth={zone_depth}, rf={test_rf}, dggrs={test_dggrs}, size={size})",
                             params=params)
 
 
