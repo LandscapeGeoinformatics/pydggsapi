@@ -12,6 +12,7 @@ from pygeofilter.ast import AstType
 from pygeofilter.backends.sql import to_sql_where
 from ordered_set import OrderedSet
 import xarray as xr
+import xarray_sql as xql
 from xarray_sql import read_xarray_table
 from datafusion import SessionContext
 import numpy as np
@@ -70,7 +71,7 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
         except KeyError as e:
             logger.error(f'{__name__} get zone_grp for resolution {res} failed: {e}')
             return result
-        ds = datasource.filehandle[zone_grp].to_dataset().chunk('auto')
+        ds = datasource.filehandle[zone_grp].to_dataset().chunk('auto').unify_chunks()
         datetime_col = datasource.datetime_col
         # create the temporal dim for non-temporal datasource if collection_timestamp is set
         # only for temporal query (include_datetime == True)

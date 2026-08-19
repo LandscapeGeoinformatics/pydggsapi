@@ -1252,29 +1252,23 @@ test = ["pandas[test]", "pre-commit", "pytest", "pytest-cov", "pytest-rerunfailu
 
 [[package]]
 name = "datafusion"
-version = "54.0.0"
+version = "52.0.0"
 description = "Build and run queries against data"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "datafusion-54.0.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:946f55e48b8d523d7b4ac106bdf588b4493c2c66f81877d6952aafeaf7c3ec73"},
-    {file = "datafusion-54.0.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:2a3bf43185c7e43e25242e5fb17b6a11b86bf976434c0bc493fdedbd9a080969"},
-    {file = "datafusion-54.0.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:9432bf162381e9282cbc74915b8b773895de18be836f7e3f6d0de4d981f24630"},
-    {file = "datafusion-54.0.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:3bcd4d213fa74710e75e6e182cc468c2bdbc5ffc74a08c8155d414fbbfa1b3f6"},
-    {file = "datafusion-54.0.0-cp310-abi3-win_amd64.whl", hash = "sha256:b934e097e1bdca7d5768a81ac1bc4a1812cb459269f8b1a5d892a5d930f18376"},
-    {file = "datafusion-54.0.0-cp314-cp314t-macosx_10_12_x86_64.whl", hash = "sha256:c4e79048da82ad89b768bd0be7df39254cd2a0afe2b719d1f129e8a7229af683"},
-    {file = "datafusion-54.0.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:fe57038003b18e28b90752c1e32b44af74ec4f552a1904aee725e1129a00c447"},
-    {file = "datafusion-54.0.0-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:574f642832a106456cfc4f32aa82484c504fc32f4be2b510202bcb579de8e6d1"},
-    {file = "datafusion-54.0.0-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:796fd5683927443c5bc61999d00b9007ef9b5ce107725ea8d241df718860985d"},
-    {file = "datafusion-54.0.0-cp314-cp314t-win_amd64.whl", hash = "sha256:64973c63874ec31670dd97b32b18af7b07fad679cb20d58ed154038e3a5c204e"},
-    {file = "datafusion-54.0.0.tar.gz", hash = "sha256:cfe7e8dfc026efc05824f49b53ad6a72caf5c2d6820759b6212a09e245a427ed"},
+    {file = "datafusion-52.0.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:999881df12ab78b6c8f04dd2056b24389374e93775a649ed20c5e35db2f42f65"},
+    {file = "datafusion-52.0.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:fd58e64158152f5c4a5836a3ce3bcca2a109d600c9ce7efdcf82e61c1ab0fbc8"},
+    {file = "datafusion-52.0.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:ab3591904f32ce290ff7161fb804e1c7bf323de16e3ddc8cf1f76310e994208e"},
+    {file = "datafusion-52.0.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:ac4b364937c277bbfcac032dbc49d08c078b13ba3f8bfda117da5fda4ea328bc"},
+    {file = "datafusion-52.0.0-cp310-abi3-win_amd64.whl", hash = "sha256:67e252ef20b918537c8fdb47e6c825c0bd639795e19715a85fedde331a83d2e1"},
+    {file = "datafusion-52.0.0.tar.gz", hash = "sha256:842cf9cdb523d04a053c5408da24645e3b2adce5d6c42ddc80a8c5edf9013ff3"},
 ]
 
 [package.dependencies]
-cloudpickle = ">=2.0"
-pyarrow = {version = ">=16.0.0", markers = "python_full_version < \"3.14.0\""}
-typing-extensions = {version = "*", markers = "python_full_version < \"3.13.0\""}
+pyarrow = {version = ">=16.0.0", markers = "python_version < \"3.14\""}
+typing-extensions = {version = "*", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "dateparser"
@@ -6963,24 +6957,36 @@ viz = ["cartopy (>=0.23)", "matplotlib", "nc-time-axis", "seaborn"]
 
 [[package]]
 name = "xarray-sql"
-version = "0.3.2"
+version = "0.3.0"
 description = "Querry Xarray with SQL."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "xarray_sql-0.3.2-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:0e0558fd4dcc1da9d71cfb2b8c96713d43ba3240a73775f6482ceb97cac688e6"},
-    {file = "xarray_sql-0.3.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:541be572f5acdf0e8f20192017f353922d4f792602bb3eaa9d13eedac6890c94"},
-    {file = "xarray_sql-0.3.2-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:5f3f0f930e437e7739bf894aa088d31d5dcc1f9c5bfed8fc9be9d0a786340b9a"},
-    {file = "xarray_sql-0.3.2-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:1cc5252e54904cdbaa75a777387e9d9eb44f727988dbef16737c595550d7ec5d"},
-    {file = "xarray_sql-0.3.2-cp310-abi3-manylinux_2_34_x86_64.whl", hash = "sha256:0f2b5bf1b6cf2a5d498b39443a232af205c78c2d26dbac5c879eb3ea4a9a6d2f"},
-    {file = "xarray_sql-0.3.2-cp310-abi3-win_amd64.whl", hash = "sha256:305e78c84be6fd742f314d5f64478148969d855168d9557db4e4623da8ce8075"},
-    {file = "xarray_sql-0.3.2.tar.gz", hash = "sha256:325e1dd38629ee5e0130587d2771f7d7847eaaa8a18b6b4f9586d2ed1762f3bb"},
+    {file = "xarray_sql-0.3.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b9a8488250721a660ffd3ea8d3b63cb7c4942d2954fdffd674eaef19f38f6dbb"},
+    {file = "xarray_sql-0.3.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:c279fbaa20cdc6541df6902da48ba9f4e5143430ac05e7c216adf3b7087bea05"},
+    {file = "xarray_sql-0.3.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:8988ee201f12eccfb80e2bac9df49911c7dc66b6c97323d1c8002d4ebbe44b7c"},
+    {file = "xarray_sql-0.3.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:fb3aeea87b8917d487257b2da1a0f583d6529c880d86b1ccc47427afd6bed4e9"},
+    {file = "xarray_sql-0.3.0-cp310-abi3-manylinux_2_34_x86_64.whl", hash = "sha256:3da8eaee5eebe21afb5776927acf2026d2c29b9fcf93d99c5bd99b192a85f426"},
+    {file = "xarray_sql-0.3.0-cp310-abi3-win_amd64.whl", hash = "sha256:8fb89a9f7eb01e9868ce0ffa1f14536b235c9c073a3b764ed9f67de03e9bfe6f"},
+    {file = "xarray_sql-0.3.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:55efcf7fbdb148055a6919a310cbb12145e705e3ae5a509c8e42ed93070399ad"},
+    {file = "xarray_sql-0.3.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:e0dd677b58f0d938a51e2e05025556ffe0efb5eeeb4cc3488c746ba8e947c760"},
+    {file = "xarray_sql-0.3.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:61feb7cd72bfd4f8ce1e635b7e4ba99f7f7caadcfb9f2cfb4943d474218adedb"},
+    {file = "xarray_sql-0.3.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4776206619fea86c72492af6acda947311292dca8334a371e95e0ba2e87239b6"},
+    {file = "xarray_sql-0.3.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:c3554412d3129fffce9b65bd21cc1f57dbc4df4a03a5f6d189f91e32eb217f45"},
+    {file = "xarray_sql-0.3.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:ebaff9c4293f5f5b9cd2ce71e37ab0f9a5e2c3c3014950995e7aeebd68c35184"},
+    {file = "xarray_sql-0.3.0-cp311-cp311-win_amd64.whl", hash = "sha256:da90a6b47d8ba4856cdc37e8021d17c10c11083eb4435fa8f188cae1c726a697"},
+    {file = "xarray_sql-0.3.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:fa6ee95ef0162962e790aa105959afd8f0556135b491d7e7c928403c75833492"},
+    {file = "xarray_sql-0.3.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:9acd5347f1b50691db75e13fa9ae175bfa607cc6a8787098c58b20e3efc07650"},
+    {file = "xarray_sql-0.3.0-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:cbfda58cb732c1ce124c99427815fe6d80435a3ca080c8f5880514ca604a57eb"},
+    {file = "xarray_sql-0.3.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:e81865062f34b6f05cc7fdb9f2f55677864b399a3852045bdef131c5060be241"},
+    {file = "xarray_sql-0.3.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:c36d7262eaf287c61ec5feccc642f4657bb19c86dea955637c800b32e1a1a2e8"},
+    {file = "xarray_sql-0.3.0.tar.gz", hash = "sha256:b24a0e9d5c0cd7fa12246739da1cdc2d3612928fccf4ff4da4f710272f5b67e1"},
 ]
 
 [package.dependencies]
 dask = ">=2024.8.0"
-datafusion = "54.0.0"
+datafusion = "52.0.0"
 xarray = ">=2024.7.0"
 
 [package.extras]
@@ -7293,4 +7299,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "41ff51090df6cc867fb564c97c74c703ae42f8b53541f2699c8979b866e974ec"
+content-hash = "33db9e17a178bbddff4070d90a984265bf54b1877ac13f414d683e7a32f1c076"
