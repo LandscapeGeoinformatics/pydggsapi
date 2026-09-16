@@ -1,0 +1,71 @@
+name: dev-testing-env
+
+services:
+  api:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    container_name: pydggsapi_development
+    ports:
+      - "8080:8000"
+    env_file: "docker_development.env"
+    volumes:
+      - dggs_api_config:/opt/local/src/pydggsapi/config
+      - pydggsapi_datasets:/opt/local/src/pydggsapi/demo_data
+    develop:
+        watch:
+            - action: sync
+              path: /pydggsapi/pydggsapi
+              target: /opt/local/src/pydggsapi/pydggsapi
+    command: [
+    "sh", "-c",
+    "uvicorn pydggsapi.api:app \	
+        --reload \
+        --host ${PYDGGSAPI_HOST:-0.0.0.0} \
+        --port ${PYDGGSAPI_PORT:-8000} \
+        --workers ${PYDGGSAPI_WORKERS:-8} \
+        --log-level ${PYDGGSAPI_LOG_LEVEL:-info} \
+    "
+    ]
+        
+          
+  # --- TEST AUTOMATION RUNNER ---
+  test-runner:
+    profiles:
+      - testing
+    build:
+        context: ../
+        dockerfile: ./docker/Dockerfile
+    container_name: pydggsapi_pytest
+    env_file: "docker_pytest.env"
+    command: [ "pytest", "tests/"]
+    volumes:
+      - dggs_api_config:/opt/local/src/pydggsapi/config
+      - pytest_datasets:/opt/local/src/pydggsapi/testing_data
+      - pytest_testcases:/opt/local/src/pydggsapi/tests
+
+volumes:
+    dggs_api_config: 
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: /pydggsapi/config
+    pydggsapi_datasets:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: /pydggsapi/demo_dataset
+    pytest_testcases:
+        driver: local
+        driver_opts:	
+            type: none
+            o: bind
+            device: /pydggsapi/tests
+    pytest_datasets:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: /pydggsapi/tests/testing_data

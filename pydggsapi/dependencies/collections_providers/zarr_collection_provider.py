@@ -13,10 +13,11 @@ from pygeofilter.backends.sql import to_sql_where
 from ordered_set import OrderedSet
 import xarray as xr
 import xarray_sql as xql
+from xarray_sql import read_xarray_table
+from datafusion import SessionContext
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from copy import deepcopy
 from typing import List, Any
 from dataclasses import dataclass
 import logging
@@ -54,7 +55,8 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                  include_properties: List[str] = None,
                  exclude_properties: List[str] = None,
                  input_zoneIds_padding: bool = True,
-                 collection_timestamp: datetime = None) -> CollectionProviderGetDataReturn:
+                 collection_timestamp: datetime = None,
+                 check_if_exists_only: bool = False) -> CollectionProviderGetDataReturn:
         result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
         # For non-temporal datasources with the collection_timestamp is set
         # The datetime_col is set to `collection_timestamp` to indicate the datetime is comming from collection
@@ -69,7 +71,7 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
         except KeyError as e:
             logger.error(f'{__name__} get zone_grp for resolution {res} failed: {e}')
             return result
-        ds = datasource.filehandle[zone_grp].to_dataset().chunk('auto')
+        ds = datasource.filehandle[zone_grp].to_dataset().chunk('auto').unify_chunks()
         datetime_col = datasource.datetime_col
         # create the temporal dim for non-temporal datasource if collection_timestamp is set
         # only for temporal query (include_datetime == True)
@@ -88,8 +90,12 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                 if (include_datetime):
                     fieldmapping.update({zone_datetime_placeholder: datetime_col})
                 cql_sql = to_sql_where(cql_filter, fieldmapping)
-                ctx = xql.XarrayContext()
-                ctx.from_dataset('ds', ds)
+                #ctx = xql.XarrayContext()
+                #ctx.from_dataset('ds', ds)
+                table = read_xarray_table(ds)
+                ctx = SessionContext()
+                ctx.register_table('ds', table)
+
                 if ("*" in datasource.data_cols):
                     incl = ",".join(include_properties) if include_properties else "*"
                     excl = datasource.exclude_data_cols or []
@@ -117,6 +123,10 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             logger.error(f'{__name__} {datasource_id} sel failed: {e}')
             return result
         if (zarr_result[id_col].size == 0):
+            return result
+        if (check_if_exists_only):
+            zarr_result = zarr_result.to_dataframe().reset_index()
+            result.zoneIds = zarr_result[id_col].tolist()
             return result
         if ('spatial_ref' in list(zarr_result.coords.keys())):
             zarr_result = zarr_result.drop('spatial_ref')

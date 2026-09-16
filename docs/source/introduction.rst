@@ -58,6 +58,15 @@ Users can control some pydggsapi settings through environment variables, such as
 
    pydggsapi
 
+The above command uses the ``gunicorn`` library to serve the pydggsapi instance, which is not compatible with Windows. We suggest installing and using ``unicorn`` instead, with parameters supplied as below:  
+
+.. code-block:: bash
+
+   uvicorn pydggsapi.api:app \
+        --host 127.0.0.1 \
+        --port 8000 \
+        --workers 4 \
+        --log-level info \
 
 Docker build
 ------------
@@ -109,6 +118,17 @@ In order to work with IGEO7 (using `DGGRID <https://github.com/sahrk/DGGRID>`_),
 .. code-block:: bash
 
    pydggsapi
+
+
+The above command uses the ``gunicorn`` library to serve the pydggsapi instance, which is not compatible with Windows. We suggest installing and using ``unicorn`` instead, with parameters supplied as below: 
+
+.. code-block:: bash
+
+   uvicorn pydggsapi.api:app \
+        --host 127.0.0.1 \
+        --port 8000 \
+        --workers 4 \
+        --log-level info \
 
 
 

@@ -182,7 +182,9 @@ class DGGALProvider(AbstractDGGRSProvider):
             self.mygrid.compactZones(compact_list)
             zones_list = [int(z) for z in compact_list]
             logger.info(f'{__name__} query zones list, compact : {len(zones_list)}')
-        zones_geometry = [generateZoneGeometry(self.mygrid, z, None, False if (returngeometry == 'zone-region') else True) for z in zones_list]
+        zones_geometry = None
+        if (returngeometry is not None):
+            zones_geometry = [generateZoneGeometry(self.mygrid, z, None, False if (returngeometry == 'zone-region') else True) for z in zones_list]
         returnedAreaMetersSquare = [self.mygrid.getZoneArea(z) for z in zones_list]
         zones_list = [self.mygrid.getZoneTextID(z) for z in zones_list]
         return DGGRSProviderZonesListReturn(**{'zones': zones_list,
