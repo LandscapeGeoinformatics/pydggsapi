@@ -1,6 +1,3 @@
-# here should be DGGRID related functions and methods
-# DGGRID ISEA7H resolutions
-
 from pydggsapi.dependencies.dggrs_providers.abstract_dggrs_provider import AbstractDGGRSProvider, ZoneIdRepresentationType
 from pydggsapi.schemas.common_geojson import GeoJSONPolygon, GeoJSONPoint
 from pydggsapi.schemas.api.dggrs_providers import (
@@ -21,13 +18,13 @@ from typing import Any, List, Union, Optional, get_args
 logger = logging.getLogger()
 
 # Implementation assumption:
-# - For nested index, there are no functions to return the refinement level of a zone id,
-#   so the only way to do that is using zuniq index. In resultthe implementation only support zuniq index.
 # - healpix-geo doesn't support textural zone id representation,
 #   so I assume the input zone id is just the uint64 in str format
+# - from the discussion in https://github.com/opengeospatial/ogcapi-discrete-global-grid-systems/issues/110
+#   the textual ZIRS of the nested index should be in the form of "{refinement level}_{nested index}".
 
 
-supported_indexing_schema = ["zuniq"]
+supported_indexing_schema = ["zuniq", "nested"]
 supported_ellipsoid = ["sphere", "wgs84"]
 
 # healpix_geo doesn't support zone statistics function yet
@@ -65,14 +62,152 @@ healpix_zone_statistics = {
     29 : { "area" :              0.0001 , "cls":           0.0121 }}
 
 
-class HEALPixZuniqProvider(AbstractDGGRSProvider):
+class HealpixGeoNestedProvider(AbstractDGGRSProvider):
+    def __init__(self, **params):
+        self.indexing_schema = params.get("indexing_schema", "nested").lower()
+        self.ellipsoid = params.get("ellipsoid", "wgs84").lower()
+        if (self.indexing_schema not in supported_indexing_schema):
+            raise ValueError(f"{__name__} {self.indexing_schema} not supported")
+        if (self.ellipsoid not in supported_ellipsoid):
+            raise ValueError(f"{__name__} {self.ellipsoid} not supported")
+        self.ellipsoid = self.ellipsoid.upper()
+
+    def convert(self, zoneIds: List[str], targedggrs: str,
+                zone_id_repr: ZoneIdRepresentationType = 'textual') -> DGGRSProviderConversionReturn:
+        raise NotImplementedError
+
+    # the textual ZIRS of the nested index should be in the form of "{refinement level}_{nested index}".
+    def zone_id_from_textual(self, cellIds: List[str], zone_id_repr: str) -> List[Any]:
+        if (zone_id_repr not in get_args(ZoneIdRepresentationType)):
+            raise ValueError("{__name__} {zone_id_repr} representation is not supported.")
+        if (len(cellIds) == 0):
+            return []
+        if (zone_id_repr == "textual"):
+            return cellIds
+        if (zone_id_repr == "int"):
+            cellIds = list(map(lambda x: x.split("_")[1], cellIds))
+            cellIds = [int(cell_id) for cell_id in cellIds]
+            return cellIds
+        if (zone_id_repr == "hexstring"):
+            raise ValueError("{__name__} doesn't support hexstring zone id representation")
+
+    # the textual ZIRS of the nested index should be in the form of "{refinement level}_{nested index}".
+    def zone_id_to_textual(self, cellIds: List[Any], zone_id_repr: str, refinement_level=None) -> List[str]:
+        if (zone_id_repr not in get_args(ZoneIdRepresentationType)):
+            raise ValueError("{__name__} {zone_id_repr} representation is not supported.")
+        if (len(cellIds) == 0):
+            return []
+        if (zone_id_repr == "textual"):
+            return cellIds
+        if (zone_id_repr == "int"):
+            # get_data return zone id in string format
+            return [str(refinement_level).zfill(2) + "_" + str(z) for z in cellIds]
+        if (zone_id_repr == "hexstring"):
+            raise ValueError("{__name__} doesn't support hexstring zone id representation")
+
+    def get_cls_by_zone_level(self, zone_level: int) -> float:
+        return healpix_zone_statistics[zone_level]["cls"]
+
+    def get_zone_level_by_cls(self, cls_km: float):
+        for k, v in healpix_zone_statistics.items():
+            if (v["cls"] < cls_km * 1000):
+                return k
+
+    # the textual ZIRS of the nested index should be in the form of "{refinement level}_{nested index}".
+    def get_cells_zone_level(self, cellIds: List[str]) -> List[int]:
+        refinement_level_str = list(map(lambda x: x.split("_")[0], cellIds))
+        depth = [int(rf) for rf in refinement_level_str]
+        return depth
+
+    def get_relative_zonelevels(self, cellId: str, base_level: int, zone_levels: List[int],
+                                geometry: Optional[ReturnGeometryTypes] = 'zone-region') -> DGGRSProviderGetRelativeZoneLevelsReturn:
+        children = {}
+        geometry = geometry.lower() if (geometry is not None) else geometry
+        cellId = self.zone_id_from_textual([cellId], "int")
+        for z in zone_levels:
+            subzone_nestedIds = healpix_geo.nested.zoom_to(cellId, base_level, z)
+            subzones_geometry = None
+            if (geometry is not None):
+                subzones_geometry = [self._generateZoneGeometry(cellId, z, False if (geometry == 'zone-region') else True)
+                                     for cellId in subzone_nestedIds]
+            subzoneIds = self.zone_id_to_textual(subzone_nestedIds.tolist(), "int", z)
+            children[z] = DGGRSProviderZonesElement(**{'zoneIds': subzoneIds,
+                                                       'geometry': subzones_geometry})
+        return DGGRSProviderGetRelativeZoneLevelsReturn(relative_zonelevels=children)
+
+    def zonesinfo(self, cellIds: List[str]) -> DGGRSProviderZoneInfoReturn:
+        zone_level = self.get_cells_zone_level(cellIds)[0]
+        cellIds = self.zone_id_from_textual(cellIds, "int")
+        try:
+            centroids = [self._generateZoneGeometry(cellId, True)
+                         for cellId in cellIds]
+            square_vertices = [self._generateZoneGeometry(cellId, False)
+                               for cellId in cellIds]
+            extents = [shapely.from_geojson(json.dumps(geojson)) for geojson in square_vertices]
+            extents = [b.bounds for b in extents]
+        except Exception as e:
+            logger.error(f'{__name__} zone id {cellIds} convert failed, {e}')
+            raise Exception(f'{__name__} zone id {cellIds} convert failed, {e}')
+        return DGGRSProviderZoneInfoReturn(**{'zone_level': zone_level, 'shapeType': 'hexagon',
+                                              'centroids': centroids, 'geometry': square_vertices, 'bbox': extents,
+                                              'areaMetersSquare': self.mygrid.getRefZoneArea(zone_level)})
+
+    def zoneslist(self, bbox: Union[shapely.box, None], zone_level: int, parent_zone: Union[str, int, None],
+                  returngeometry: ReturnGeometryTypes, compact: bool = True) -> List[str]:
+        if (bbox is not None):
+            try:
+                bbox = shapely.bounds(bbox)
+                zones_list, _, _ = healpix_geo.nested.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=False)
+                zones_list = set(zones_list)
+            except Exception as e:
+                logger.error(f'{__name__} query zones list, bbox: {bbox} convert failed :{e}')
+                raise Exception(f"{__name__} query zones list, bbox: {bbox} convert failed {e}")
+            logger.info(f'{__name__} query zones list, number of cells: {len(zones_list)}')
+        if (parent_zone is not None):
+            try:
+                parent_zone_level = self.get_cells_zone_level([parent_zone])[0]
+                parent_zone = self.zone_id_from_textual([parent_zone], "int")
+                subzones_list = healpix_geo.nested.zoome_to(parent_zone, parent_zone_level, zone_level)
+                zones_list = (zones_list & subzones_list) if (bbox is not None) else subzones_list
+            except Exception as e:
+                logger.error(f'{__name__} query zones list, parent_zone: {parent_zone} get children failed {e}')
+                raise Exception(f'parent_zone: {parent_zone} get children failed {e}')
+        if (len(zones_list) == 0):
+            raise Exception(f"{__name__} Parent zone {parent_zone} is not with in bbox: {bbox} at zone level {zone_level}")
+        # TODO: compact zones
+        zones_geometry = None
+        if (returngeometry is not None):
+            zones_geometry = [self._generateZoneGeometry(z, False if (returngeometry == 'zone-region') else True) for z in zones_list]
+        returnedAreaMetersSquare = [healpix_zone_statistics[zone_level]['area']] * len(zones_list)
+        zones_list = self.zone_id_to_textual(zones_list, "int", zone_level)
+        return DGGRSProviderZonesListReturn(**{'zones': zones_list,
+                                               'geometry': zones_geometry,
+                                               'returnedAreaMetersSquare': returnedAreaMetersSquare})
+
+    def _generateZoneGeometry(self, zoneId: int, refinement_level: int, centroids: bool = False) -> GeoJSONPoint | GeoJSONPolygon | None:
+        if centroids:
+            lon, lat = healpix_geo.nested.healpix_to_lonlat(np.array([zoneId]), refinement_level, self.ellipsoid)
+
+            return GeoJSONPoint(type="Point", coordinates=(lon[0][0], lat[0][1]))
+        else:
+            lon, lat = healpix_geo.nested.vertices([zoneId], refinement_level, self.ellipsoid)
+            vertices = np.squeeze(np.stack([lon, lat], axis=-1))
+            coordinates = []
+            for i in range(vertices.shape[0]):
+                coordinates.append((vertices[i][0], vertices[i][1]))
+            # to make the polygon a closed linestring
+            coordinates.append((vertices[0][0], vertices[0][1]))
+            return GeoJSONPolygon(type="Polygon", coordinates=[coordinates])
+
+
+class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
     def __init__(self, **params):
         self.indexing_schema = params.get("indexing_schema", "zuniq").lower()
         self.ellipsoid = params.get("ellipsoid", "wgs84").lower()
         if (self.indexing_schema not in supported_indexing_schema):
             raise ValueError(f"{__name__} {self.indexing_schema} not supported")
         if (self.ellipsoid not in supported_ellipsoid):
-            raise ValueError(f"{__name__} {self.indexing_schema} not supported")
+            raise ValueError(f"{__name__} {self.ellipsoid} not supported")
         self.ellipsoid = self.ellipsoid.upper()
 
     def convert(self, zoneIds: List[str], targedggrs: str,
@@ -167,14 +302,14 @@ class HEALPixZuniqProvider(AbstractDGGRSProvider):
                 zones_list, _ = healpix_geo.zuniq.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=False)
                 zones_list = set(zones_list)
             except Exception as e:
-                logger.error(f'{__name__} query zones list, bbox: {bbox} dggrid convert failed :{e}')
-                raise Exception(f"{__name__} query zones list, bbox: {bbox} dggrid convert failed {e}")
-            logger.info(f'{__name__} query zones list, number of hexagons: {len(zones_list)}')
+                logger.error(f'{__name__} query zones list, bbox: {bbox} convert failed :{e}')
+                raise Exception(f"{__name__} query zones list, bbox: {bbox} convert failed {e}")
+            logger.info(f'{__name__} query zones list, number of cells: {len(zones_list)}')
         if (parent_zone is not None):
             try:
                 parent_zone_level = self.get_cells_zone_level([parent_zone])[0]
                 parent_zone = self.zone_id_from_textual([parent_zone], "int")
-                parent_zone_nestedId, _ = healpix_geo.zuniq(parent_zone)
+                parent_zone_nestedId, _ = healpix_geo.zuniq.to_nested(parent_zone)
                 subzones_list = healpix_geo.nested.zoome_to(parent_zone_nestedId, parent_zone_level, zone_level)
                 subzones_list = healpix_geo.zuniq.from_nested(subzones_list, zone_level)
                 zones_list = (zones_list & subzones_list) if (bbox is not None) else subzones_list
@@ -184,6 +319,8 @@ class HEALPixZuniqProvider(AbstractDGGRSProvider):
         if (len(zones_list) == 0):
             raise Exception(f"{__name__} Parent zone {parent_zone} is not with in bbox: {bbox} at zone level {zone_level}")
         # TODO: compact zones
+        if (returngeometry is not None):
+            zones_geometry = [self._generateZoneGeometry(z, False if (returngeometry == 'zone-region') else True) for z in zones_list]
         zones_geometry = [self._generateZoneGeometry(z, False if (returngeometry == 'zone-region') else True) for z in zones_list]
         returnedAreaMetersSquare = [healpix_zone_statistics[zone_level]['area']] * len(zones_list)
         zones_list = self.zone_id_to_textual(zones_list, "int")
