@@ -35,15 +35,17 @@ class Mercator:
             17: {"Tiles": 17179869184, "Tile width deg lons": 0.00275, "m per pixel": 1.194},
             18: {"Tiles": 68719476736, "Tile width deg lons": 0.001375, "m per pixel": 0.597},
             19: {"Tiles": 274877906944, "Tile width deg lons": 0.0006875, "m per pixel": 0.299},
-            20: {"Tiles": 1099511627776, "Tile width deg lons": 0.00034375, "m per pixel": 0.149}
+            20: {"Tiles": 1099511627776, "Tile width deg lons": 0.00034375, "m per pixel": 0.149},
+            21: {"Tiles": 4398046511104, "Tile width deg lons": 0.000171661, "m per pixel": 0.07},
+            22: {"Tiles": 17592186044416, "Tile width deg lons": 0.000085831, "m per pixel": 0.03},
         }
 
     def get(self, zoom):
         # zoom must be integer and between 0 and 20 inclusive
         if not isinstance(zoom, int):
             raise TypeError("zoom must be integer")
-        if zoom < 0 or zoom > 20:
-            raise ValueError("zoom must be between 0 and 20 inclusive")
+        if zoom < 0 or zoom > 22:
+            raise ValueError("zoom must be between 0 and 22 inclusive")
 
         return self.zoom_info[zoom]
 

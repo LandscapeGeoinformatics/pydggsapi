@@ -97,7 +97,7 @@ def query_zone_data(
 
         # get data for all relative_levels for the currnet datasource
         for z, v in result.relative_zonelevels.items():
-            g = [shapely.from_geojson(json.dumps(g.__dict__))for g in v.geometry] if (returngeometry is not None) else None
+            g = [shapely.geometry.shape(g.__dict__) for g in v.geometry] if (returngeometry is not None) else None
             converted_z = z
             if (convert):
                 # convert the source dggrs ID to the datasource dggrs zoneID.
