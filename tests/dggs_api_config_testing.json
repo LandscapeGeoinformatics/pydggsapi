@@ -60,6 +60,36 @@
           "datasource_id": "est_topo_slope_10m_elva_healpix_temporal"
         }
       }
+	},
+    "5": {
+      "Estonia_twi_10m_elva_healpixgeo_nested_zarr": {
+	"title": "The Slope dataset of Estonia near Elva in HEALPix(nested) DGGRS stored in Zarr format",
+        "description": "A HEALPix dataset converted from a clipped TWI near Elva with 10M spatial resolution. The dataset",
+	"extent": {"spatial": {"bbox": [[26.2718,  58.2267, 26.5815,  58.3295]]}},
+        "collection_provider": {
+          "providerId": "zarr",
+          "dggrsId": "healpixgeo_nested",
+          "dggrs_zoneid_repr": "int",
+          "min_refinement_level": 5,
+          "max_refinement_level": 14,
+          "datasource_id": "est_topo_twi_10m_elva_healpix_nested"
+        }
+      }
+	},
+   "6": {
+      "Estonia_twi_10m_elva_healpixgeo_zuniq_zarr": {
+	"title": "The Slope dataset of Estonia near Elva in HEALPix(zuniq) DGGRS stored in Zarr format",
+        "description": "A HEALPix dataset converted from a clipped TWI near Elva with 10M spatial resolution. The dataset",
+	"extent": {"spatial": {"bbox": [[26.2718,  58.2267, 26.5815,  58.3295]]}},
+        "collection_provider": {
+          "providerId": "zarr",
+          "dggrsId": "healpixgeo_zuniq",
+          "dggrs_zoneid_repr": "int",
+          "min_refinement_level": 5,
+          "max_refinement_level": 14,
+          "datasource_id": "est_topo_twi_10m_elva_healpix_zuniq"
+        }
+      }
 	}
   },
   "dggrs": {
@@ -96,6 +126,28 @@
         "classname": "dggal_dggrs_provider.DGGALProvider",
         "parameters": {"grid": "HEALPIX"}
       }
+    },
+     "4": {
+      "healpixgeo_nested": {
+        "title": "HEALPix using healpix-geo with nested indexing",
+        "description": "desc",
+        "crs": "wgs84",
+   	"shapeType": "rhombus",
+        "definition_link": "https://healpix-geo.readthedocs.io/en/latest/healpix/index.html",
+        "defaultDepth": 1,
+        "classname": "healpixgeo_dggrs_provider.HealpixGeoNestedProvider"
+      }
+    },
+    "5": {
+      "healpixgeo_zuniq": {
+        "title": "HEALPix using healpix-geo with zuniq indexing",
+        "description": "desc",
+        "crs": "wgs84",
+   	"shapeType": "rhombus",
+        "definition_link": "https://healpix-geo.readthedocs.io/en/latest/healpix/index.html",
+        "defaultDepth": 1,
+        "classname": "healpixgeo_dggrs_provider.HealpixGeoZuniqProvider"
+      }
     }
   },
   "collection_providers": {
@@ -117,6 +169,38 @@
 					"8": "refinement_level_8",
 					"9": "refinement_level_9",
 					"10": "refinement_level_10"}
+				},
+			"est_topo_twi_10m_elva_healpix_nested": {
+	   			"filepath": "testing_data/est_topo_twi_clipped_10m_healpix_nested_datatree.zarr",
+				"id_col": "cell_ids",
+				"zone_groups":{
+					"5": "refinement_level_5",
+					"6": "refinement_level_6",
+					"7": "refinement_level_7",
+					"8": "refinement_level_8",
+					"9": "refinement_level_9",
+					"10": "refinement_level_10",
+					"11": "refinement_level_11",
+					"12": "refinement_level_12",
+					"13": "refinement_level_13",
+					"14": "refinement_level_14"															
+					}
+				},
+			"est_topo_twi_10m_elva_healpix_zuniq": {
+	   			"filepath": "testing_data/est_topo_twi_clipped_10m_healpix_zuniq_datatree.zarr",
+				"id_col": "cell_ids",
+				"zone_groups":{
+					"5": "refinement_level_5",
+					"6": "refinement_level_6",
+					"7": "refinement_level_7",
+					"8": "refinement_level_8",
+					"9": "refinement_level_9",
+					"10": "refinement_level_10",
+					"11": "refinement_level_11",
+					"12": "refinement_level_12",
+					"13": "refinement_level_13",
+					"14": "refinement_level_14"															
+					}
 				}
 			}
     	}

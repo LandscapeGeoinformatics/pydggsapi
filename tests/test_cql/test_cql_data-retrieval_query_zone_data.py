@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 from dggal import Application, pydggal_setup, CRS, ogc, epsg, GeoExtent, Array, GeoPoint
 from dggal import IVEA7H, ISEA7H_Z7, rHEALPix, HEALPix
-
+import healpix_geo
 
 extra_conf = {
     "input_address_type": 'HIERNDX',
@@ -71,6 +71,8 @@ dggal_supported_grids_mapping = {'IVEA7H': IVEA7H,
                                  'ISEA7H_Z7': ISEA7H_Z7,
                                  'HEALPIX': HEALPix}
 
+healpixgeo_supported_grids_mapping = {"healpixgeo_nested": healpix_geo.nested,
+                                      "healpixgeo_zuniq": healpix_geo.zuniq}
 dggal_app = Application(appGlobals=globals())
 pydggal_setup(dggal_app)
 working = tempfile.mkdtemp()
@@ -82,6 +84,8 @@ for dggrs in all_dggrs:
         support_grids[dggrs_id] = dggal_supported_grids_mapping[dggrs_config['parameters']['grid']]()
     elif ("igeo7_dggrs_provider" in dggrs_config["classname"]):
         support_grids[dggrs_id] = dggrid
+    elif ("healpixgeo_dggrs_provider" in dggrs_config["classname"]):
+        support_grids[dggrs_id] = healpixgeo_supported_grids_mapping[dggrs_id]
 
 for collection in collections:
     cid, collection_config = collection.popitem()
@@ -117,7 +121,7 @@ for collection_name, collection in collections_dict.items():
         dt = cp.datasources[datasource_id].filehandle
         zone_groups = cp.datasources[datasource_id].zone_groups
         ds1 = dt[zone_groups[str(rf1)]].to_dataset().to_dataframe().reset_index()
-        ds1 = ds1.drop('spatial_ref', axis=1)
+        ds1 = ds1.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds1.columns) else ds1
     elif (isinstance(cp, ParquetCollectionProvider)):
         parquetpath = cp.datasources[datasource_id].filepath
         ds1 = pd.read_parquet(parquetpath).reset_index()
@@ -132,6 +136,12 @@ for collection_name, collection in collections_dict.items():
     if (collection.collection_provider.dggrsId == 'igeo7'):
         ds1['textual_zone_id'] = ds1['zone_id'].apply(lambda x: z7hex_to_z7string(z7int_to_z7hex(x)))
         ds1 = ds1.drop('zone_id', axis=1)
+    elif ("healpixgeo" in collection.collection_provider.dggrsId):
+        if ("nested" in collection.collection_provider.dggrsId):
+            ds1['textual_zone_id'] = ds1['cell_ids'].apply(lambda x: f"{str(rf1).zfill(2)}_{str(x)}")
+        else:
+            ds1['textual_zone_id'] = ds1['cell_ids'].apply(lambda x: f"{str(x)}")
+        ds1 = ds1.drop('cell_ids', axis=1)
     else:
         mygrid = support_grids[collection.collection_provider.dggrsId]
         ds1['textual_zone_id'] = ds1['zone_id'].apply(lambda x: mygrid.getZoneTextID(x))

@@ -1,0 +1,48 @@
+{
+  "shape": [
+    159
+  ],
+  "data_type": "uint64",
+  "chunk_grid": {
+    "name": "regular",
+    "configuration": {
+      "chunk_shape": [
+        159
+      ]
+    }
+  },
+  "chunk_key_encoding": {
+    "name": "default",
+    "configuration": {
+      "separator": "/"
+    }
+  },
+  "fill_value": 0,
+  "codecs": [
+    {
+      "name": "bytes",
+      "configuration": {
+        "endian": "little"
+      }
+    },
+    {
+      "name": "numcodecs.blosc",
+      "configuration": {
+        "cname": "zstd",
+        "clevel": 3,
+        "shuffle": 2
+      }
+    }
+  ],
+  "attributes": {
+    "grid_name": "healpix",
+    "level": 12,
+    "indexing_scheme": "nested"
+  },
+  "dimension_names": [
+    "cell_ids"
+  ],
+  "zarr_format": 3,
+  "node_type": "array",
+  "storage_transformers": []
+}

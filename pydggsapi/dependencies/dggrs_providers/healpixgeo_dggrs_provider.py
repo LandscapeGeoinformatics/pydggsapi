@@ -165,7 +165,7 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
             try:
                 parent_zone_level = self.get_cells_zone_level([parent_zone])[0]
                 parent_zone = self.zone_id_from_textual([parent_zone], "int")
-                subzones_list = healpix_geo.nested.zoome_to(parent_zone, parent_zone_level, zone_level)
+                subzones_list = set(healpix_geo.nested.zoom_to(parent_zone, parent_zone_level, zone_level)[0])
                 zones_list = (zones_list & subzones_list) if (bbox is not None) else subzones_list
             except Exception as e:
                 logger.error(f'{__name__} query zones list, parent_zone: {parent_zone} get children failed {e}')
@@ -323,9 +323,10 @@ class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
             logger.info(f'{__name__} query zones list, number of cells: {len(zones_list)}')
         if (parent_zone is not None):
             try:
-                parent_zone_level = self.get_cells_zone_level([parent_zone])[0]
-                parent_zone = self.zone_id_from_textual([parent_zone], "int")
-                subzones_list = healpix_geo.nested.zoome_to(parent_zone, parent_zone_level, zone_level)
+                parent_zone_nested, parent_zone_level = healpix_geo.zuniq.to_nested(parent_zone)
+                subzones_list = healpix_geo.nested.zoom_to(parent_zone_nested,
+                                                           parent_zone_level[0], zone_level)[0]
+                subzones_list = set(healpix_geo.nested.to_zuniq(subzones_list, zone_level))
                 zones_list = (zones_list & subzones_list) if (bbox is not None) else subzones_list
             except Exception as e:
                 logger.error(f'{__name__} query zones list, parent_zone: {parent_zone} get children failed {e}')
