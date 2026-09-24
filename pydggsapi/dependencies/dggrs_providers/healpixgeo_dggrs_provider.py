@@ -208,25 +208,24 @@ class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
         self.ellipsoid = params.get("ellipsoid", "wgs84").lower()
         if (self.ellipsoid not in supported_ellipsoid):
             raise ValueError(f"{__name__} {self.ellipsoid} not supported")
+        self.support_conversion = params.get("support_conversion", {})
         self.ellipsoid = self.ellipsoid.upper()
-        nested_conversion_properties = conversion_properties(zonelevel_offset=0)
-        self.dggrs_conversion = {"nested": nested_conversion_properties}
+        self.dggrs_conversion = {dggrsid: conversion_properties(**conversion_param)
+                                 for dggrsid, conversion_param in self.support_conversion.items()}
 
     def convert(self, zoneIds: List[str], targetdggrs: str,
                 zone_id_repr: ZoneIdRepresentationType = 'textual') -> DGGRSProviderConversionReturn:
-        match targetdggrs:
-
-            case "nested":
-                # in the case of healpix, conversion from zuniq index to nested is a 1-to-1 mapping.
-                nestedIds, refinement_level = healpix_geo.zuniq.to_nested(zoneIds)
-                nestedIds, refinement_level = nestedIds.tolist(), refinement_level.tolist()
-                if (zone_id_repr == 'textual'):
-                    nestedIds = list(map(lambda x: f"{refinement_level[x]}_{nestedIds[x]}",
-                                         range(len(nestedIds))))
-                return DGGRSProviderConversionReturn(zoneIds=zoneIds, target_zoneIds=nestedIds,
-                                                     target_res=refinement_level)
-            case _:
-                raise Exception(f"{__name__} conversion to {targetdggrs} not supported.")
+        if (targetdggrs not in self.dggrs_conversion.keys()):
+            raise Exception(f"{__name__} conversion to {targetdggrs} not supported.")
+        else:
+            # in the case of healpix, conversion from zuniq index to nested is a 1-to-1 mapping.
+            nestedIds, refinement_level = healpix_geo.zuniq.to_nested(zoneIds)
+            nestedIds, refinement_level = nestedIds.tolist(), refinement_level.tolist()
+            if (zone_id_repr == 'textual'):
+                nestedIds = list(map(lambda x: f"{refinement_level[x]}_{nestedIds[x]}",
+                                     range(len(nestedIds))))
+            return DGGRSProviderConversionReturn(zoneIds=zoneIds, target_zoneIds=nestedIds,
+                                                 target_res=refinement_level)
 
     # at the time of implementation, healpix_geo doesn't support textural repr of zone id
     # so assume the input is just uint64 in str

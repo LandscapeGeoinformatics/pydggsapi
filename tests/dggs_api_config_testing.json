@@ -146,7 +146,8 @@
    	"shapeType": "rhombus",
         "definition_link": "https://healpix-geo.readthedocs.io/en/latest/healpix/index.html",
         "defaultDepth": 1,
-        "classname": "healpixgeo_dggrs_provider.HealpixGeoZuniqProvider"
+        "classname": "healpixgeo_dggrs_provider.HealpixGeoZuniqProvider",
+        "parameters": {"support_conversion": {"healpixgeo_nested": {"zonelevel_offset": 0}}}
       }
     }
   },
