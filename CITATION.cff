@@ -25,7 +25,7 @@ identifiers:
     description: "Generic identifier of all pydggsapi releases"
 references:
   - type: article
-    value: 10.1016/j.softx.2026.103042
+    doi: 10.1016/j.softx.2026.103042
     title: "pydggsapi - a query web service for discrete global grid systems (DGGS) collections"
     date-released: 2026-09-22
     volume-title: SoftwareX
@@ -33,14 +33,14 @@ references:
     year: 2026
     month: 12
   - type: data
-    value: 10.5281/zenodo.18952928
+    doi: 10.5281/zenodo.18952928
     title: "pydggsapi sample configuration"
   - type: data
-    value: 10.5281/zenodo.18877265
+    doi: 10.5281/zenodo.18877265
     title: "A sample collection of GeoTiffs to demonstrate conversion from raster dataset to DGGS indexed xarray dataset"
   - type: data
-    value: 10.5281/zenodo.19060623
+    doi: 10.5281/zenodo.19060623
     title: "DGGS H3 Zarr-encoded ClimateData.ca Variables Subset"
   - type: software-code
-    value: 10.5281/zenodo.19060258
+    doi: 10.5281/zenodo.19060258
     title: "OGC DGGS: A collection of scripts, documentation, data preparation and visualization pipelines for DGGS representation."
