@@ -113,7 +113,8 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             else:
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
-                zarr_result = ds.query({id_col: f'{id_col} in {zoneIds}'})
+                dimension = ds[id_col].dims[0]
+                zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
                 zarr_result = zarr_result[cols]
         except Exception as e:
             # Zarr will raise exception if nothing matched

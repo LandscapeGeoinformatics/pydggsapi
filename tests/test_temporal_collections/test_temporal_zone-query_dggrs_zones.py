@@ -109,8 +109,8 @@ for collection_name, collection in collections_dict.items():
         zone_groups = cp.datasources[datasource_id].zone_groups
         ds1 = dt[zone_groups[rf1]].to_dataset().to_dataframe()
         ds2 = dt[zone_groups[rf2]].to_dataset().to_dataframe()
-        ds1 = ds1.drop('spatial_ref', axis=1)
-        ds2 = ds2.drop('spatial_ref', axis=1)
+        ds1 = ds1.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds1.columns) else ds1
+        ds2 = ds2.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds2.columns) else ds2
     elif (isinstance(cp, ParquetCollectionProvider)):
         # duckdb connection
         parquetpath = cp.datasources[datasource_id].filepath

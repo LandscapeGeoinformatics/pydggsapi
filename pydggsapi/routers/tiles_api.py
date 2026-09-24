@@ -57,11 +57,13 @@ async def query_mvt_tiles(
     collection = collection_info[tilesreq.collectionId]
     collection_provider = _get_collection_provider(collection.collection_provider.providerId)[collection.collection_provider.providerId]
     ds = collection_provider.datasources[collection.collection_provider.datasource_id]
+    conversion = True if (tilesreq.dggrsId != collection.collection_provider.dggrsId) else False
     id_col = getattr(ds, "id_col", "zone_id")
     if (id_col == ''):
         id_col = "zone_id"
     bbox, tile = mercator.getWGS84bbox(tilesreq.z, tilesreq.x, tilesreq.y)
     res_info = mercator.get(tile.z)
+    print(tile.z)
     tile_width_km = float(res_info["Tile width deg lons"]) / 0.01 * 0.4  # in tile_width_km
     zone_level = dggrs_provider.get_zone_level_by_cls(tile_width_km)
     if (tilesreq.relative_depth != 0):
@@ -77,10 +79,23 @@ async def query_mvt_tiles(
         return Response(bytes(content), media_type="application/x-protobuf")
     logger.debug(f'{__name__} zone level:{zone_level}, tile width:{tile_width_km}, bbox:{bbox}')
     zoneslist = dggrs_provider.zoneslist(clip_bound, zone_level, parent_zone=None, returngeometry='zone-region', compact=False)
-    geometry = [shapely.from_geojson(json.dumps(g.__dict__)) for g in zoneslist.geometry]
+    geometry = [shapely.geometry.shape(g.__dict__) for g in zoneslist.geometry]
     if (collection.collection_provider.dggrs_zoneid_repr != "textual"):
         zoneslist.zones = dggrs_provider.zone_id_from_textual(zoneslist.zones, collection.collection_provider.dggrs_zoneid_repr)
     zoneslist = gpd.GeoDataFrame({'zone_id': zoneslist.zones}, geometry=geometry).set_index('zone_id')
+    if (conversion):
+        targetdggrs = collection.collection_provider.dggrsId
+        if (targetdggrs in list(dggrs_provider.dggrs_conversion.keys())):
+            targetdggrsprovider = _get_dggrs_provider(targetdggrs)
+            converted = dggrs_provider.convert(zoneslist.index.to_list(), targetdggrs)
+            if (collection.collection_provider.dggrs_zoneid_repr != "textual"):
+                converted.target_zoneIds = targetdggrsprovider.zone_id_from_textual(converted.target_zoneIds,
+                                                                                    collection.collection_provider.dggrs_zoneid_repr)
+            # zone_id == collection zone ids , target_id = incomming zone id from request
+            # swapped in comparison to no conversion is needed.
+            convertedlist = gpd.GeoDataFrame({'zone_id': converted.target_zoneIds,
+                                              'target_id': converted.zoneIds}).set_index('target_id')
+            zoneslist = convertedlist.join(zoneslist).reset_index().set_index('zone_id')
     zones_data = collection_provider.get_data(zoneslist.index.to_list(), zone_level,
                                               collection.collection_provider.datasource_id, input_zoneIds_padding=False)
     if (len(zones_data.zoneIds) == 0):
@@ -99,6 +114,11 @@ async def query_mvt_tiles(
     zones_data = gpd.GeoDataFrame(zones_data.data, index=pd_indexes, columns=list(zones_data.cols_meta.keys()))
     zones_data = zones_data.join(zoneslist).reset_index(names=indexes_cols)
     zones_data[id_col] = zones_data[id_col].astype(zoneslist.index.dtype)
+    if (conversion):
+        zones_geometry = zones_data.groupby("target_id")["geometry"].first()
+        zones_data = zones_data.drop(columns="geometry").groupby('target_id').mean()
+        zones_data = zones_data.drop(columns=indexes_cols)
+        zones_data = zones_data.join(zones_geometry).reset_index(names=indexes_cols)
     if (collection.collection_provider.dggrs_zoneid_repr != 'textual'):
         zones_data[id_col] = dggrs_provider.zone_id_to_textual(zones_data[id_col].values,
                                                                collection.collection_provider.dggrs_zoneid_repr, zone_level)

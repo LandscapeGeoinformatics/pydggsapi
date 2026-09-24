@@ -1,0 +1,1051 @@
+{
+  "attributes": {},
+  "zarr_format": 3,
+  "consolidated_metadata": {
+    "kind": "inline",
+    "must_understand": false,
+    "metadata": {
+      "refinement_level_10": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_11": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_12": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_13": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_14": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_5": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_6": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_7": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_8": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_9": {
+        "attributes": {},
+        "zarr_format": 3,
+        "consolidated_metadata": {
+          "kind": "inline",
+          "must_understand": false,
+          "metadata": {}
+        },
+        "node_type": "group"
+      },
+      "refinement_level_10/cell_ids": {
+        "shape": [
+          34
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              34
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 10,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_10/twi": {
+        "shape": [
+          34
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              34
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_11/cell_ids": {
+        "shape": [
+          66
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              66
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 11,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_11/twi": {
+        "shape": [
+          66
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              66
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_12/cell_ids": {
+        "shape": [
+          159
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              159
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 12,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_12/twi": {
+        "shape": [
+          159
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              159
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_13/cell_ids": {
+        "shape": [
+          477
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              477
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 13,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_13/twi": {
+        "shape": [
+          477
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              477
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_14/cell_ids": {
+        "shape": [
+          1589
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1589
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 14,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_14/twi": {
+        "shape": [
+          1589
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1589
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_5/cell_ids": {
+        "shape": [
+          9
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              9
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 5,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_5/twi": {
+        "shape": [
+          9
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              9
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_6/cell_ids": {
+        "shape": [
+          11
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              11
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 6,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_6/twi": {
+        "shape": [
+          11
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              11
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_7/cell_ids": {
+        "shape": [
+          10
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              10
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 7,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_7/twi": {
+        "shape": [
+          10
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              10
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_8/cell_ids": {
+        "shape": [
+          13
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              13
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 8,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_8/twi": {
+        "shape": [
+          13
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              13
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_9/cell_ids": {
+        "shape": [
+          18
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              18
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "grid_name": "healpix",
+          "level": 9,
+          "indexing_scheme": "nested"
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "refinement_level_9/twi": {
+        "shape": [
+          18
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              18
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "numcodecs.blosc",
+            "configuration": {
+              "cname": "zstd",
+              "clevel": 3,
+              "shuffle": 2
+            }
+          }
+        ],
+        "attributes": {
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "cell_ids"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      }
+    }
+  },
+  "node_type": "group"
+}

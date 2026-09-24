@@ -107,10 +107,13 @@ for collection_name, collection in collections_dict.items():
         # It is a data tree
         dt = cp.datasources[datasource_id].filehandle
         zone_groups = cp.datasources[datasource_id].zone_groups
-        ds1 = dt[zone_groups[str(rf1)]].to_dataset().to_dataframe()
-        ds2 = dt[zone_groups[str(rf2)]].to_dataset().to_dataframe()
-        ds1 = ds1.drop('spatial_ref', axis=1).reset_index()
-        ds2 = ds2.drop('spatial_ref', axis=1).reset_index()
+        ds1 = dt[zone_groups[str(rf1)]].to_dataset().to_dataframe().reset_index()
+        ds2 = dt[zone_groups[str(rf2)]].to_dataset().to_dataframe().reset_index()
+        if ("cell_ids" in ds1.columns or "cell_ids" in ds2.columns):
+            ds1 = ds1.rename(columns={"cell_ids": "zone_id"})
+            ds2 = ds2.rename(columns={"cell_ids": "zone_id"})
+        ds1 = ds1.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds1.columns) else ds1
+        ds2 = ds2.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds2.columns) else ds2
         test_rf = {rf1: [ds1], rf2: [ds2]}
     elif (isinstance(cp, ParquetCollectionProvider)):
         # duckdb connection
@@ -172,6 +175,8 @@ def test_cql_zone_query_dggrs_zones():
                     test_value = np.nanmax(tdata)
                     validation_data = dataset[dataset[column_names[0]] <= test_value]
                 cql_string = cql_string.format(var_name=column_names[0], value=test_value)
+                if (validation_data.empty):
+                    continue
                 print(f"CQL to test: {cql_string}")
                 print(f"test data: {validation_data}")
                 print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, compact=False")

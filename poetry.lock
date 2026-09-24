@@ -2595,6 +2595,38 @@ files = [
 numpy = ">=1.21.2"
 
 [[package]]
+name = "healpix-geo"
+version = "0.4.1"
+description = ""
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "healpix_geo-0.4.1-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:4b9a864e185d16cd2a83116aeda7aa2c939f2f664a00d42f0734d57976f70c19"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:079089fae20317094b16fbb42b353f01b3b3ea4b44fa4e72a776d3fbbf0e573d"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:265c845c32d1643bcff6b84732bc17a90f1007da5e1e16cb509db8a41a059e8f"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:34dde8858cc67ebcd3a85489e6ccdda0e045ccf4ed0c4f496fe0f90aed092318"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2e4e5de294bfaf7de38a72e7a16b030916be1bfd8896ebbb60c7c548e1cd2bac"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:a7036cdac9d17c1185c12bf9e96243c27012d95c545059807874c3d13cb4296c"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:a88fdf30256b6ed27e40ddc5998b10db43d98003887f39b978041f4d2db812cd"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bcd6d1db979d7d4d76af106378e6acac254248d0377e6eee13a08853b39b342b"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:7054692109202bcdd1b7a0d94d3f472b64470422432747358028eb43a5bae82f"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:464f8558e497f6e3252363d5b0a9f351c72d1c9f51e0422351cd06cfc61e1147"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-musllinux_1_2_i686.whl", hash = "sha256:f29a39cd1bb350fd154a51cff1194627fbfffa3d2bf5e8bf4d5340c4910c3d92"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:58a5b29f0e3814e13d7e20a1bea9cddd317f77a1e3851b4f662dd46725b042e5"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-win32.whl", hash = "sha256:db882c3b6bc73e0f6b05b2318a3099b88dc50311e87c03aaf7d3f46a01f21e9d"},
+    {file = "healpix_geo-0.4.1-cp310-abi3-win_amd64.whl", hash = "sha256:bf1fe47623bba13845f5a2a8782a8d808b27e9afd46cf6c9053c86f4ec916cb8"},
+]
+
+[package.dependencies]
+marray = "*"
+numpy = ">=2.0"
+
+[package.extras]
+geometries = ["shapely (>=2)"]
+ragged = ["awkward", "ragged"]
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 description = "A minimal low-level HTTP client."
@@ -3469,6 +3501,22 @@ files = [
     {file = "markupsafe-3.0.3-cp39-cp39-win_arm64.whl", hash = "sha256:38664109c14ffc9e7437e86b4dceb442b0096dfe3541d7864d9cbe1da4cf36c8"},
     {file = "markupsafe-3.0.3.tar.gz", hash = "sha256:722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698"},
 ]
+
+[[package]]
+name = "marray"
+version = "0.0.12"
+description = "Masked versions of array API compatible arrays"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "marray-0.0.12-py3-none-any.whl", hash = "sha256:86e1bf6120e9eb39ab3c4b4dd9ae8283f8f92d5c2895c0fc0f56c6255c50ecb7"},
+    {file = "marray-0.0.12.tar.gz", hash = "sha256:d9cb475b0dee78ecb0f56cf0e7003d2bdb7d060ae935454e833823767c08d2bc"},
+]
+
+[package.extras]
+docs = ["ghp-import", "jupyter-book"]
+test = ["array-api-compat", "array-api-strict", "numpy", "pytest", "pytest-cov", "pytorch"]
 
 [[package]]
 name = "matplotlib-inline"
@@ -7299,4 +7347,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "33db9e17a178bbddff4070d90a984265bf54b1877ac13f414d683e7a32f1c076"
+content-hash = "e133756cd8df46fed6bcccf3bde551f0991cbd148670d7c963f7211394b8386d"
