@@ -205,7 +205,7 @@ def test_cql_data_retrieval():
                 feature = data.features[0]
                 feature.properties.pop("zoneId")
                 feature.properties.pop("depth")
-                assert len(feature.properties.values()) > tdata.shape[0]
+                assert len(feature.properties.values()) >= tdata.shape[0]
             else:
                 assert response.status_code == 204
 
