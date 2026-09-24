@@ -12,6 +12,29 @@ authors:
   orcid: https://orcid.org/0000-0003-4386-4450
 title: "pydggsapi: An OGC API DGGS implementation based on Python FastAPI"
 version: "0.4.0"
-doi: none
+doi: 10.5281/zenodo.18981764
 date-released: 2025-08-01
+date-published: 2026-09-04
 url: "https://github.com/LandscapeGeoinformatics/pydggsapi/"
+repository-code: "https://github.com/LandscapeGeoinformatics/pydggsapi/"
+license: Apache-2.0
+license-url: https://github.com/LandscapeGeoinformatics/pydggsapi/blob/v0.4.0/LICENSE
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22292118
+    description: "pydggsapi: An OGC API DGGS implementation based on Python FastAPI - Version v0.4.0"
+  - type: doi
+    value: 10.1016/j.softx.2026.103042
+    description: "Paper: pydggsapi - a query web service for discrete global grid systems (DGGS) collections"
+  - type: doi
+    value: 10.5281/zenodo.18952928
+    description: "pydggsapi sample configuration"
+  - type: doi
+    value: 10.5281/zenodo.18877265
+    description: "A sample collection of GeoTiffs to demonstrate conversion from raster dataset to DGGS indexed xarray dataset"
+  - type: doi
+    value: 10.5281/zenodo.19060623
+    description: "DGGS H3 Zarr-encoded ClimateData.ca Variables Subset"
+  - type: doi
+    value: 10.5281/zenodo.19060258
+    description: "OGC DGGS: A collection of scripts, documentation, data preparation and visualization pipelines for DGGS representation."
