@@ -9,9 +9,66 @@ authors:
   orcid: "https://orcid.org/0000-0003-4862-3349"
 - family-names: "Kmoch"
   given-names: "Alexander"
-  orcid: https://orcid.org/0000-0003-4386-4450
+  orcid: "https://orcid.org/0000-0003-4386-4450"
 title: "pydggsapi: An OGC API DGGS implementation based on Python FastAPI"
 version: "0.4.0"
-doi: none
-date-released: 2025-08-01
+doi: 10.5281/zenodo.22292118
+date-released: 2026-09-04
 url: "https://github.com/LandscapeGeoinformatics/pydggsapi/"
+repository-code: "https://github.com/LandscapeGeoinformatics/pydggsapi/"
+license: Apache-2.0
+license-url: "https://github.com/LandscapeGeoinformatics/pydggsapi/blob/v0.4.0/LICENSE"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.18981764
+    description: "Generic identifier of all pydggsapi releases"
+references:
+  - type: article
+    doi: 10.1016/j.softx.2026.103042
+    title: "pydggsapi - a query web service for discrete global grid systems (DGGS) collections"
+    date-released: 2026-09-22
+    volume-title: SoftwareX
+    volume: 36
+    year: 2026
+    month: 12
+    authors:
+    - family-names: "Chan"
+      given-names: "Wai Tik"
+      orcid: "https://orcid.org/0009-0005-3779-139X"
+    - family-names: "Charette Migneault"
+      given-names: "Francis"
+      orcid: "https://orcid.org/0000-0003-4862-3349"
+    - family-names: "Uuemaa"
+      given-names: "Evelyn"
+      orcid: "https://orcid.org/0000-0002-0782-6740"
+    - family-names: "Kmoch"
+      given-names: "Alexander"
+      orcid: "https://orcid.org/0000-0003-4386-4450"
+  - type: data
+    doi: 10.5281/zenodo.18952928
+    title: "pydggsapi sample configuration"
+    authors:
+      - family-names: "Chan"
+        given-names: "Wai Tik"
+        orcid: "https://orcid.org/0009-0005-3779-139X"
+  - type: data
+    doi: 10.5281/zenodo.18877265
+    title: "A sample collection of GeoTiffs to demonstrate conversion from raster dataset to DGGS indexed xarray dataset"
+    authors:
+      - family-names: "Chan"
+        given-names: "Wai Tik"
+        orcid: "https://orcid.org/0009-0005-3779-139X"
+  - type: data
+    doi: 10.5281/zenodo.19060623
+    title: "DGGS H3 Zarr-encoded ClimateData.ca Variables Subset"
+    authors:
+      - family-names: "Charette Migneault"
+        given-names: "Francis"
+        orcid: "https://orcid.org/0000-0003-4862-3349"
+  - type: software-code
+    doi: 10.5281/zenodo.19060258
+    title: "OGC DGGS: A collection of scripts, documentation, data preparation and visualization pipelines for DGGS representation."
+    authors:
+      - family-names: "Charette Migneault"
+        given-names: "Francis"
+        orcid: "https://orcid.org/0000-0003-4862-3349"
