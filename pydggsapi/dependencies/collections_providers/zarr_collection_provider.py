@@ -22,6 +22,8 @@ from typing import List, Any
 from dataclasses import dataclass
 import logging
 
+import time
+
 logger = logging.getLogger()
 
 
@@ -114,8 +116,14 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
                 dimension = ds[id_col].dims[0]
+                # for xdggs: when dimension (cells) != cell_ids to_dataframe()
+                # will result in an extra column for the index.
+                start = time.time()
                 zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
+                print(f"query time: {time.time() - start}")
                 zarr_result = zarr_result[cols]
+                if (dimension != id_col):
+                    zarr_result = zarr_result.swap_dims({dimension: id_col})
         except Exception as e:
             # Zarr will raise exception if nothing matched
             logger.error(f'{__name__} {datasource_id} sel failed: {e}')

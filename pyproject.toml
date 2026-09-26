@@ -50,6 +50,7 @@ zarr = "^3.2.1"
 s3fs = ">=2026.2.0,<2027.0.0"
 gcsfs = ">=2026.2.0,<2027.0.0"
 healpix-geo = "0.4.1"
+xdggs = "^0.6.0"
 
 
 [tool.poetry.group.dev.dependencies]
