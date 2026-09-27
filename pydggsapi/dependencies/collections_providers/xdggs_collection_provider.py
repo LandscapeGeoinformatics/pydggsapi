@@ -119,7 +119,7 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
                                   collection_timestamp, check_if_exists_only)
         if (restore):
             print("Xdggs rollback ")
-            target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind,
-                                                               "compression": datasource.compression})
+            target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind})
+                                                               # "compression": datasource.compression})
             self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
         return result
