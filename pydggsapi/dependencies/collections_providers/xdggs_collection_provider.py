@@ -65,6 +65,8 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
                         try:
                             ds = xdggs.decode(ds, index_options={"index_kind": datasource.index_kind})
                                                                 # "compression": datasource.compression})
+                            # save the dggs attribute for future use
+                            ds[group_id_col].attrs.update(dggs_attrs)
                             new_dt[group_name] = xr.DataTree(dataset=ds)
                             zones_group[str(ds.dggs.grid_info.level)] = group_name
                             skip[i] = False
@@ -107,8 +109,8 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
         restore = False
         if (cql_filter is not None and (not isinstance(index_type, xr.core.indexes.PandasIndex))):
             print("Xdggs handling ")
-            target_ds = target_ds.drop_indexes(datasource.id_col)
-            self.datasources[datasource_id].filehandle = datatree.assign({group_name: xr.DataTree(dataset=target_ds)})
+            target_ds = target_ds.drop_indexes(datasource.id_col).reset_coords()
+            self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
             restore = True
 
         print("Xdggs parent get_data call")
@@ -119,5 +121,5 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
             print("Xdggs rollback ")
             target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind,
                                                                "compression": datasource.compression})
-            self.datasources.filehandle[group_name[1:]] = xr.DataTree(dataset=target_ds)
+            self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
         return result
