@@ -115,15 +115,17 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             else:
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
-                dimension = ds[id_col].dims[0]
                 # for xdggs: when dimension (cells) != cell_ids to_dataframe()
                 # will result in an extra column for the index.
+                dimension = ds[id_col].dims[0]
                 start = time.time()
-                zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
+                pos = np.where(ds[id_col].isin(zoneIds))[0]
+                zarr_result = ds.isel({dimension: pos})
+                # zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
                 print(f"query time: {time.time() - start}")
                 zarr_result = zarr_result[cols]
-                if (dimension != id_col):
-                    zarr_result = zarr_result.swap_dims({dimension: id_col})
+                if ("xdggs" in str(zarr_result.xindexes.get(id_col).__class__)):
+                    zarr_result = zarr_result.drop_indexes(id_col).swap_dims({dimension: id_col})
         except Exception as e:
             # Zarr will raise exception if nothing matched
             logger.error(f'{__name__} {datasource_id} sel failed: {e}')
