@@ -7,7 +7,7 @@ import logging
 from pygeofilter.ast import AstType
 from datetime import datetime
 from typing import List, Any, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 logger = logging.getLogger()
 
@@ -28,6 +28,7 @@ def _legacy_convertor_translator(dggs_attribute: Dict[str, str]) -> (str, str, D
 class XdggsDatasourceInfo(ZarrDatasourceInfo):
     index_kind: str = None
     compression: str = "none"
+    dggs_metadata: Dict[str, str] = field(default_factory=lambda: {})
 
 
 # xdggs provider inhert from ZarrCollectionProvider
@@ -40,33 +41,23 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
                 zones_group = {}
                 datasource = XdggsDatasourceInfo(**v)
                 dt = xr.open_datatree(datasource.filepath, engine="zarr", chunks="auto",
-                                      storage_options=datasource.storage_options, consolidated=False)
-                id_col = datasource.id_col
+                                      storage_options=datasource.storage_options, consolidated=True)
                 # we need a new datatree to hold the xdggs dataset
                 new_dt = xr.DataTree(name=k)
                 skip = [True] * len(dt.groups)
-                group_id_col = ""
+                # id_col, there are multiple gropus and the column name of cell id can be different.
+                # the coordinate of the last group will be used as the id_col
                 for i, group in enumerate(dt.groups):
                     if (group != "/"):
                         ds = dt[group].to_dataset()
                         group_name = group[1:]
-                        # if id_col is not specify, try to get dggs attribute from the dataset.attrs
-                        # otherwise, assume it is under the variabel id_col's attrs
-                        if (id_col == ""):
-                            # check if the dggs attribute is in the dataset attribute
-                            if (ds.attrs.get("dggs", None) is None):
-                                # dggs attribute not found, skip the whold datasource
-                                logger.warning(f'{__name__} can\'t locate the dggs attribute in {k} for group: {group}')
-                                continue
-                            else:
-                                # if dggs attribute exists in dataset attribute, copy it to the id_col variable
-                                group_id_col, datasource.compression, dggs_attrs = _legacy_convertor_translator(ds.attrs["dggs"])
-                                ds[group_id_col].attrs.update(dggs_attrs)
+                        # xdggs infer a convention from the dataset.
                         try:
-                            ds = xdggs.decode(ds, index_options={"index_kind": datasource.index_kind})
-                                                                # "compression": datasource.compression})
+                            ds = xdggs.decode(ds, index_options={"index_kind": datasource.index_kind,
+                                                                 "compression": datasource.compression})
+                            datasource.id_col = ds.dggs.coord.name
                             # save the dggs attribute for future use
-                            ds[group_id_col].attrs.update(dggs_attrs)
+                            datasource.dggs_metadata = ds.dggs.grid_info.to_dict()
                             new_dt[group_name] = xr.DataTree(dataset=ds)
                             zones_group[str(ds.dggs.grid_info.level)] = group_name
                             skip[i] = False
@@ -78,8 +69,6 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
                 if (not all(skip)):
                     datasource.zone_groups = zones_group
                     datasource.filehandle = new_dt
-                    if datasource.id_col == "":
-                        datasource.id_col = group_id_col
                     self.datasources[k] = datasource
                     logger.info(f"{__name__} added datasource: {k}")
         except Exception as e:
@@ -119,7 +108,8 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
                                   collection_timestamp, check_if_exists_only)
         if (restore):
             print("Xdggs rollback ")
-            target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind})
-                                                               # "compression": datasource.compression})
+            target_ds[datasource.id_col].attrs.update(datasource.dggs_metadata)
+            target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind,
+                                                               "compression": datasource.compression})
             self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
         return result
