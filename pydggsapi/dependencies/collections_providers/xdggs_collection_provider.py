@@ -1,0 +1,113 @@
+from pydggsapi.dependencies.collections_providers.zarr_collection_provider import ZarrCollectionProvider, ZarrDatasourceInfo
+from pydggsapi.schemas.api.collection_providers import CollectionProviderGetDataReturn, CollectionProviderGetDataDictReturn
+
+import xarray as xr
+import xdggs
+import logging
+from pygeofilter.ast import AstType
+from datetime import datetime
+from typing import List, Any, Dict
+from dataclasses import dataclass, field
+
+logger = logging.getLogger()
+
+
+def _legacy_convertor_translator(dggs_attribute: Dict[str, str]) -> (str, str, Dict[str, str]):
+    dggs = dggs_attribute.copy()
+    if (dggs.get("name")):
+        dggs.update({"grid_name": dggs.pop("name")})
+    if (dggs.get("refinement_level")):
+        dggs.update({"level": dggs.pop("refinement_level")})
+    compression = dggs.pop("compression")
+    id_col = dggs.pop("coordinate")
+    dggs.pop("spatial_dimension")
+    return id_col, compression, dggs
+
+
+@dataclass
+class XdggsDatasourceInfo(ZarrDatasourceInfo):
+    index_kind: str = None
+    compression: str = "none"
+    dggs_metadata: Dict[str, str] = field(default_factory=lambda: {})
+
+
+# xdggs provider inhert from ZarrCollectionProvider
+class XdggsCollectionProvider(ZarrCollectionProvider):
+
+    def __init__(self, datasources):
+        self.datasources = {}
+        try:
+            for k, v in datasources.items():
+                zones_group = {}
+                datasource = XdggsDatasourceInfo(**v)
+                dt = xr.open_datatree(datasource.filepath, engine="zarr", chunks="auto",
+                                      storage_options=datasource.storage_options, consolidated=True)
+                # we need a new datatree to hold the xdggs dataset
+                new_dt = xr.DataTree(name=k)
+                skip = [True] * len(dt.groups)
+                # id_col, there are multiple gropus and the column name of cell id can be different.
+                # the coordinate of the last group will be used as the id_col
+                for i, group in enumerate(dt.groups):
+                    if (group != "/"):
+                        ds = dt[group].to_dataset()
+                        group_name = group[1:]
+                        # xdggs infer a convention from the dataset.
+                        try:
+                            ds = xdggs.decode(ds, index_options={"index_kind": datasource.index_kind,
+                                                                 "compression": datasource.compression})
+                            datasource.id_col = ds.dggs.coord.name
+                            # save the dggs attribute for future use
+                            datasource.dggs_metadata = ds.dggs.grid_info.to_dict()
+                            new_dt[group_name] = xr.DataTree(dataset=ds)
+                            zones_group[str(ds.dggs.grid_info.level)] = group_name
+                            skip[i] = False
+                            # new_dt = new_dt.assign({group_name: xr.DataTree(dataset=ds)})
+                        except Exception as e:
+                            logger.warning(f'{__name__} error when decoding {group} in {k} to xdggs: {e} , skipped.')
+                            continue
+                # skip adding the datasource if all groups failed from decode as xdggs dataset
+                if (not all(skip)):
+                    datasource.zone_groups = zones_group
+                    datasource.filehandle = new_dt
+                    self.datasources[k] = datasource
+                    logger.info(f"{__name__} added datasource: {k}")
+        except Exception as e:
+            logger.error(f'{__name__} create datasource failed: {e}')
+            raise Exception(f'{__name__} create datasource failed: {e}')
+
+    def get_data(self, zoneIds: List[Any], res: int, datasource_id: str,
+                 cql_filter: AstType = None, include_datetime: bool = False,
+                 include_properties: List[str] = None,
+                 exclude_properties: List[str] = None,
+                 input_zoneIds_padding: bool = True,
+                 collection_timestamp: datetime = None,
+                 check_if_exists_only: bool = False) -> CollectionProviderGetDataReturn:
+        # since xarray-sql doesn't work with xdggs xindexes,
+        # I have to change it back to a normal dataset when the cql_filter is not None
+        result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
+        datasource = self.datasources[datasource_id]
+        datatree = datasource.filehandle
+        try:
+            group_name = datasource.zone_groups[str(res)]
+        except KeyError as e:
+            logger.error(f'{__name__} get zone_grp for resolution {res} failed: {e}')
+            return result
+        target_ds = datatree[group_name].to_dataset()
+        index_type = type(target_ds.xindexes.get(datasource.id_col))
+        restore = False
+        if (cql_filter is not None and (not isinstance(index_type, xr.core.indexes.PandasIndex))):
+            dim = target_ds.dggs.coord.dims[0]
+            temp = target_ds.drop_indexes(datasource.id_col)
+            temp = temp.swap_dims({dim: datasource.id_col})
+            self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=temp)
+            restore = True
+
+        result = super().get_data(zoneIds, res, datasource_id, cql_filter, include_datetime,
+                                  include_properties, exclude_properties, input_zoneIds_padding,
+                                  collection_timestamp, check_if_exists_only)
+        if (restore):
+            #target_ds[datasource.id_col].attrs.update(datasource.dggs_metadata)
+            #target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind,
+            #                                                   "compression": datasource.compression})
+            self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
+        return result

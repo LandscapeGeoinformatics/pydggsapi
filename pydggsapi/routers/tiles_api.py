@@ -63,7 +63,6 @@ async def query_mvt_tiles(
         id_col = "zone_id"
     bbox, tile = mercator.getWGS84bbox(tilesreq.z, tilesreq.x, tilesreq.y)
     res_info = mercator.get(tile.z)
-    print(tile.z)
     tile_width_km = float(res_info["Tile width deg lons"]) / 0.01 * 0.4  # in tile_width_km
     zone_level = dggrs_provider.get_zone_level_by_cls(tile_width_km)
     if (tilesreq.relative_depth != 0):
@@ -96,8 +95,16 @@ async def query_mvt_tiles(
             convertedlist = gpd.GeoDataFrame({'zone_id': converted.target_zoneIds,
                                               'target_id': converted.zoneIds}).set_index('target_id')
             zoneslist = convertedlist.join(zoneslist).reset_index().set_index('zone_id')
-    zones_data = collection_provider.get_data(zoneslist.index.to_list(), zone_level,
-                                              collection.collection_provider.datasource_id, input_zoneIds_padding=False)
+    try:
+        zones_data = collection_provider.get_data(zoneslist.index.to_list(), zone_level,
+                                                  collection.collection_provider.datasource_id, input_zoneIds_padding=False)
+    except Exception as e:
+        logger.error(f"{__name__} get_data error: {e}")
+        content = mapbox_vector_tile.encode({"name": tilesreq.collectionId, "features": []},
+                                            quantize_bounds=bbox,
+                                            default_options={"transformer": transformer.transform})
+        return Response(bytes(content), media_type="application/x-protobuf")
+
     if (len(zones_data.zoneIds) == 0):
         content = mapbox_vector_tile.encode({"name": tilesreq.collectionId, "features": []},
                                             quantize_bounds=bbox,

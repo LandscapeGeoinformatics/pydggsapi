@@ -22,6 +22,8 @@ from typing import List, Any
 from dataclasses import dataclass
 import logging
 
+import time
+
 logger = logging.getLogger()
 
 
@@ -95,7 +97,6 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                 table = read_xarray_table(ds)
                 ctx = SessionContext()
                 ctx.register_table('ds', table)
-
                 if ("*" in datasource.data_cols):
                     incl = ",".join(include_properties) if include_properties else "*"
                     excl = datasource.exclude_data_cols or []
@@ -109,13 +110,23 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                         incl -= set(exclude_properties)
                     cols = f"{','.join(incl)}, {id_col}"
                 sql = f"""select {cols} from ds where ("{id_col}" in ({', '.join(f"'{z}'" for z in zoneIds)})) and ({cql_sql}) """
+                start = time.time()
                 zarr_result = xr.Dataset.from_dataframe(ctx.sql(sql).to_pandas().set_index(id_col))
+                logger.debug(f"query time: {time.time() - start}")
             else:
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
+                # for xdggs: when dimension (cells) != cell_ids to_dataframe()
+                # will result in an extra column for the index.
                 dimension = ds[id_col].dims[0]
-                zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
+                start = time.time()
+                pos = np.where(ds[id_col].isin(zoneIds))[0]
+                zarr_result = ds.isel({dimension: pos})
+                # zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
+                logger.debug(f"query time: {time.time() - start}")
                 zarr_result = zarr_result[cols]
+                if ("xdggs" in str(zarr_result.xindexes.get(id_col).__class__)):
+                    zarr_result = zarr_result.drop_indexes(id_col).swap_dims({dimension: id_col})
         except Exception as e:
             # Zarr will raise exception if nothing matched
             logger.error(f'{__name__} {datasource_id} sel failed: {e}')

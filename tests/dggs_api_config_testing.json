@@ -67,7 +67,7 @@
         "description": "A HEALPix dataset converted from a clipped TWI near Elva with 10M spatial resolution. The dataset",
 	"extent": {"spatial": {"bbox": [[26.2718,  58.2267, 26.5815,  58.3295]]}},
         "collection_provider": {
-          "providerId": "zarr",
+          "providerId": "xdggs",
           "dggrsId": "healpixgeo_nested",
           "dggrs_zoneid_repr": "int",
           "min_refinement_level": 5,
@@ -224,6 +224,17 @@
               "filepath": "testing_data/est_topo_twi_10m_elva_healpix_dggrs_2025_09_23_24.parquet",
 			  "id_col": "zone_id",
 			  "datetime_col": "time_stamp"
+	      }
+        }
+     }
+    },
+    "3": {
+      "xdggs": {
+        "classname": "xdggs_collection_provider.XdggsCollectionProvider",
+        "datasources": {
+          "est_topo_twi_10m_elva_healpix_nested": {
+		  	  "filepath": "testing_data/est_topo_twi_clipped_10m_healpix_nested_datatree.zarr",
+			  "index_kind": "moc"
 	      }
         }
      }
