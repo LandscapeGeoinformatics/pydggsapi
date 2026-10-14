@@ -2,6 +2,7 @@ from pydggsapi.schemas.api.collections import Collection
 from pydggsapi.schemas.ogc_dggs.dggrs_zones import ZonesResponse, ZonesGeoJson
 from pydggsapi.dependencies.collections_providers.parquet_collection_provider import ParquetCollectionProvider
 from pydggsapi.dependencies.collections_providers.zarr_collection_provider import ZarrCollectionProvider
+from pydggsapi.dependencies.collections_providers.xdggs_collection_provider import XdggsCollectionProvider
 from fastapi.testclient import TestClient
 import pytest
 import importlib
@@ -103,7 +104,20 @@ for collection_name, collection in collections_dict.items():
     rf2 = max_rf - 1
     ds1, ds2 = None, None
     cp = collection_providers_dict[collection.collection_provider.providerId]
-    if (isinstance(cp, ZarrCollectionProvider)):
+    if (isinstance(cp, XdggsCollectionProvider)):
+        # It is a data tree
+        dt = cp.datasources[datasource_id].filehandle
+        zone_groups = cp.datasources[datasource_id].zone_groups
+        id_col = cp.datasources[datasource_id].id_col
+        ds1 = dt[zone_groups[str(rf1)]].to_dataset().drop_indexes(id_col).reset_coords().to_dataframe().reset_index(drop=True)
+        ds2 = dt[zone_groups[str(rf2)]].to_dataset().drop_indexes(id_col).reset_coords().to_dataframe().reset_index(drop=True)
+        if ("cell_ids" in ds1.columns or "cell_ids" in ds2.columns):
+            ds1 = ds1.rename(columns={"cell_ids": "zone_id"})
+            ds2 = ds2.rename(columns={"cell_ids": "zone_id"})
+        ds1 = ds1.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds1.columns) else ds1
+        ds2 = ds2.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds2.columns) else ds2
+        test_rf = {rf1: [ds1], rf2: [ds2]}
+    elif (isinstance(cp, ZarrCollectionProvider)):
         # It is a data tree
         dt = cp.datasources[datasource_id].filehandle
         zone_groups = cp.datasources[datasource_id].zone_groups
@@ -178,8 +192,9 @@ def test_cql_zone_query_dggrs_zones():
                 if (validation_data.empty):
                     continue
                 print(f"CQL to test: {cql_string}")
-                print(f"test data: {validation_data}")
-                print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, compact=False")
+                print(f" - test data: {validation_data}")
+                print(f" - Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
+                        compact=False, cql: {cql_string})")
                 response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
                                                                                  "zone-level": rf,
                                                                                  "compact-zones": False,
@@ -196,18 +211,21 @@ def test_cql_zone_query_dggrs_zones():
             test_values = dataset.iloc[iloc_pos].values
             for cql_string in cql_composition:
                 cql_string = cql_string.format(var_name=column_names[0], value1=test_values[0][0], value2=test_values[1][0])
-                print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
-                        compact=False, cql: {cql_string})")
-                response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
-                                                                                        "zone-level": rf,
-                                                                                        "compact-zones": False,
-                                                                                        "filter": cql_string})
                 if ("AND" in cql_string):
                     validation_data = dataset[(dataset[column_names[0]] >= test_values[0][0]) &
                                               (dataset[column_names[0]] <= test_values[1][0])]
                 elif ("OR" in cql_string):
                     validation_data = dataset[(dataset[column_names[0]] == test_values[0][0]) |
                                               (dataset[column_names[0]] == test_values[1][0])]
+                print(f"CQL to test: {cql_string}")
+                print(f" - test data: {validation_data}")
+                print(f"Success test case with dggs zones query ({dggrsid}, bbox: {aoi.bounds}, zone_level={rf}, \
+                        compact=False, cql: {cql_string})")
+                response = client.get(f'/dggs-api/dggs/{dggrsid}/zones', params={"bbox": ",".join(bounds),
+                                                                                 "zone-level": rf,
+                                                                                 "compact-zones": False,
+                                                                                 "filter": cql_string})
+
                 if (validation_data.shape[0] > 0):
                     assert response.status_code == 200
                     zones = ZonesResponse(**response.json())

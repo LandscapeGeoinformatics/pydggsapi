@@ -2,6 +2,7 @@ from pydggsapi.schemas.api.collections import Collection
 from pydggsapi.schemas.ogc_dggs.dggrs_zones_data import ZonesDataDggsJsonResponse, ZonesDataGeoJson
 from pydggsapi.dependencies.collections_providers.parquet_collection_provider import ParquetCollectionProvider
 from pydggsapi.dependencies.collections_providers.zarr_collection_provider import ZarrCollectionProvider
+from pydggsapi.dependencies.collections_providers.xdggs_collection_provider import XdggsCollectionProvider
 from fastapi.testclient import TestClient
 import pytest
 import importlib
@@ -116,7 +117,14 @@ for collection_name, collection in collections_dict.items():
         # because zone data retrieval separates the handling for temporal/non-temporal collections
         # and we are not testing the datetime parameter here, so it is default to non-temporal collections
         continue
-    if (isinstance(cp, ZarrCollectionProvider)):
+    if (isinstance(cp, XdggsCollectionProvider)):
+        # It is a data tree
+        dt = cp.datasources[datasource_id].filehandle
+        zone_groups = cp.datasources[datasource_id].zone_groups
+        id_col = cp.datasources[datasource_id].id_col
+        ds1 = dt[zone_groups[str(rf1)]].to_dataset().drop_indexes(id_col).reset_coords().to_dataframe().reset_index(drop=True)
+        ds1 = ds1.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds1.columns) else ds1
+    elif (isinstance(cp, ZarrCollectionProvider)):
         # It is a data tree
         dt = cp.datasources[datasource_id].filehandle
         zone_groups = cp.datasources[datasource_id].zone_groups
