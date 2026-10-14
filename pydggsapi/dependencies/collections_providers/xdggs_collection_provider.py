@@ -84,7 +84,6 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
                  check_if_exists_only: bool = False) -> CollectionProviderGetDataReturn:
         # since xarray-sql doesn't work with xdggs xindexes,
         # I have to change it back to a normal dataset when the cql_filter is not None
-        print("Xdggs get_data call")
         result = CollectionProviderGetDataReturn(zoneIds=[], cols_meta={}, data=[])
         datasource = self.datasources[datasource_id]
         datatree = datasource.filehandle
@@ -97,19 +96,18 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
         index_type = type(target_ds.xindexes.get(datasource.id_col))
         restore = False
         if (cql_filter is not None and (not isinstance(index_type, xr.core.indexes.PandasIndex))):
-            print("Xdggs handling ")
-            target_ds = target_ds.drop_indexes(datasource.id_col).reset_coords()
-            self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
+            dim = target_ds.dggs.coord.dims[0]
+            temp = target_ds.drop_indexes(datasource.id_col)
+            temp = temp.swap_dims({dim: datasource.id_col})
+            self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=temp)
             restore = True
 
-        print("Xdggs parent get_data call")
         result = super().get_data(zoneIds, res, datasource_id, cql_filter, include_datetime,
                                   include_properties, exclude_properties, input_zoneIds_padding,
                                   collection_timestamp, check_if_exists_only)
         if (restore):
-            print("Xdggs rollback ")
-            target_ds[datasource.id_col].attrs.update(datasource.dggs_metadata)
-            target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind,
-                                                               "compression": datasource.compression})
+            #target_ds[datasource.id_col].attrs.update(datasource.dggs_metadata)
+            #target_ds = xdggs.decode(target_ds, index_options={"index_kind": datasource.index_kind,
+            #                                                   "compression": datasource.compression})
             self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=target_ds)
         return result
