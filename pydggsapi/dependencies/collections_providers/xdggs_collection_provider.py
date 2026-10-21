@@ -40,7 +40,7 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
             for k, v in datasources.items():
                 zones_group = {}
                 datasource = XdggsDatasourceInfo(**v)
-                dt = xr.open_datatree(datasource.filepath, engine="zarr", chunks="auto",
+                dt = xr.open_datatree(datasource.filepath, engine="zarr", chunks={},
                                       storage_options=datasource.storage_options, consolidated=True)
                 # we need a new datatree to hold the xdggs dataset
                 new_dt = xr.DataTree(name=k)
@@ -101,7 +101,6 @@ class XdggsCollectionProvider(ZarrCollectionProvider):
             temp = temp.swap_dims({dim: datasource.id_col})
             self.datasources[datasource_id].filehandle[group_name] = xr.DataTree(dataset=temp)
             restore = True
-
         result = super().get_data(zoneIds, res, datasource_id, cql_filter, include_datetime,
                                   include_properties, exclude_properties, input_zoneIds_padding,
                                   collection_timestamp, check_if_exists_only)
