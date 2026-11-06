@@ -155,7 +155,7 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
         if (bbox is not None):
             try:
                 bbox = shapely.bounds(bbox)
-                zones_list, _, _ = healpix_geo.nested.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=False)
+                zones_list, _, _ = healpix_geo.nested.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=True)
                 zones_list = set(zones_list)
             except Exception as e:
                 logger.error(f'{__name__} query zones list, bbox: {bbox} convert failed :{e}')
@@ -314,7 +314,7 @@ class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
         if (bbox is not None):
             try:
                 bbox = shapely.bounds(bbox)
-                zones_list, _ = healpix_geo.zuniq.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=False)
+                zones_list, _ = healpix_geo.zuniq.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=True)
                 zones_list = set(zones_list)
             except Exception as e:
                 logger.error(f'{__name__} query zones list, bbox: {bbox} convert failed :{e}')
