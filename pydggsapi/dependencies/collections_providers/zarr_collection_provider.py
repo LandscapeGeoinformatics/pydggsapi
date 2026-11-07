@@ -45,7 +45,7 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
         try:
             for k, v in datasources.items():
                 datasource = ZarrDatasourceInfo(**v)
-                datasource.filehandle = xr.open_datatree(datasource.filepath, engine="zarr", chunks="auto",
+                datasource.filehandle = xr.open_datatree(datasource.filepath, engine="zarr", chunks={},
                                                          storage_options=datasource.storage_options)
                 self.datasources[k] = datasource
         except Exception as e:
@@ -123,6 +123,9 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                 zarr_result = ds.isel({dimension: pos})
                 # zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
                 zarr_result = zarr_result[cols]
+                if (id_col not in zarr_result.coords.keys()):
+                    zarr_result = zarr_result.swap_dims({dimension: id_col})
+                    # zarr_result = zarr_result.set_index({dimension: id_col}).rename_dims({dimension: id_col})
                 if ("xdggs" in str(zarr_result.xindexes.get(id_col).__class__)):
                     zarr_result = zarr_result.drop_indexes(id_col).swap_dims({dimension: id_col})
         except Exception as e:
