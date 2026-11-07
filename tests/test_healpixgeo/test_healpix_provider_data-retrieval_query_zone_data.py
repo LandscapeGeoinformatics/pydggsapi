@@ -97,7 +97,7 @@ for collection_name, collection in collections_dict.items():
     rf = collection.collection_provider.max_refinement_level - 2
 
     mygrid = support_grids[collection.collection_provider.dggrsId]
-    results = mygrid.zone_coverage((minx, miny, maxx, maxy), rf, ellipsoid="WGS84", flat=False)
+    results = mygrid.zone_coverage((minx, miny, maxx, maxy), rf, ellipsoid="WGS84", flat=True)
     zones_ids = results[0]
 
     if ("nested" in collection.collection_provider.dggrsId):
@@ -115,7 +115,7 @@ for collection_name, collection in collections_dict.items():
     centroid_df = gpd.GeoDataFrame({'zone_id': textual_zones_ids}, geometry=geometry, crs='wgs84')
 
     non_exist_bbox = non_exist_aoi.bounds
-    non_exist_zone_ids = mygrid.zone_coverage(tuple(non_exist_bbox), rf, ellipsoid="WGS84", flat=False)
+    non_exist_zone_ids = mygrid.zone_coverage(tuple(non_exist_bbox), rf, ellipsoid="WGS84", flat=True)
     non_exist_zone_ids = non_exist_zone_ids[0]
     if ("nested" in collection.collection_provider.dggrsId):
         textual_non_exist_zone_ids = list(map(lambda x: f"{str(rf).zfill(2)}_{str(x)}", non_exist_zone_ids))

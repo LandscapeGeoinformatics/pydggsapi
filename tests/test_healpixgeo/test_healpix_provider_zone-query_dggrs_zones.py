@@ -95,7 +95,7 @@ for collection_name, collection in collections_dict.items():
     # maxx, maxy = round(maxx - 0.1, 3), round(maxy - 0.05, 3)
     rf = collection.collection_provider.max_refinement_level - 2
     mygrid = support_grids[collection.collection_provider.dggrsId]
-    results = mygrid.zone_coverage(tuple(bbox), rf, ellipsoid="WGS84", flat=False)
+    results = mygrid.zone_coverage(tuple(bbox), rf, ellipsoid="WGS84", flat=True)
     zones_ids = results[0]
 
     if ("nested" in collection.collection_provider.dggrsId):
@@ -113,7 +113,7 @@ for collection_name, collection in collections_dict.items():
     centroid_df = gpd.GeoDataFrame({'zone_id': textual_zones_ids}, geometry=geometry, crs='wgs84')
 
     rf2 = rf - 3
-    results = mygrid.zone_coverage(tuple(bbox), rf2, ellipsoid="WGS84", flat=False)
+    results = mygrid.zone_coverage(tuple(bbox), rf2, ellipsoid="WGS84", flat=True)
     zones_ids = results[0]
     if ("nested" in collection.collection_provider.dggrsId):
         generateZoneGeometry = _nested_generateZoneGeometries
