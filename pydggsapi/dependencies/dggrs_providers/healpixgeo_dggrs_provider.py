@@ -139,8 +139,8 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
         zone_level = self.get_cells_zone_level(cellIds)[0]
         cellIds = self.zone_id_from_textual(cellIds, "int")
         try:
-            centroids = self._generateZoneGeometries(cellIds, zone_level, True)
-            square_vertices = self._generateZoneGeometries(cellIds, zone_level, False)
+            centroids = self._generateZoneGeometries([cellIds], zone_level, True)
+            square_vertices = self._generateZoneGeometries([cellIds], zone_level, False)
             extents = [shapely.geometry.shape(geojson.__dict__) for geojson in square_vertices]
             extents = [b.bounds for b in extents]
         except Exception as e:
