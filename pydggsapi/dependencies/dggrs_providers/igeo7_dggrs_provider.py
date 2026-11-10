@@ -254,13 +254,11 @@ class IGEO7Provider(AbstractDGGRSProvider):
             logger.error(f'{__name__} zone id {cellIds} dggrid convert failed')
             raise Exception(f'{__name__} zone id {cellIds} dggrid convert failed')
         geometry, bbox, centroids = [], [], []
-        #for g in hex_geometry:
-            #geometry.append(GeoJSONPolygon(**eval(shapely.to_geojson(g))))
-        geometry = list(map(lambda x: GeoJSONPolygon(type="Polygon", coordinates=[list(x.exterior.coords)]), hex_geometry))
-        #    bbox.append(list(g.bounds))
-        #for c in centroid:
-        #    centroids.append(GeoJSONPoint(**eval(shapely.to_geojson(c))))
-        centroids = list(map(lambda x: GeoJSONPoint(type="Point", coordinates=list(x.coords[0])), centroid))
+        for g in hex_geometry:
+            geometry.append(GeoJSONPolygon(**eval(shapely.to_geojson(g))))
+            bbox.append(list(g.bounds))
+        for c in centroid:
+            centroids.append(GeoJSONPoint(**eval(shapely.to_geojson(c))))
         return DGGRSProviderZoneInfoReturn(**{'zone_level': zone_level, 'shapeType': 'hexagon',
                                               'centroids': centroids, 'geometry': geometry, 'bbox': bbox,
                                               'areaMetersSquare': self.data[zone_level]["Area (km^2)"] * 1000000})
