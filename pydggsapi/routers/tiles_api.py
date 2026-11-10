@@ -77,11 +77,12 @@ async def query_mvt_tiles(
                                             default_options={"transformer": transformer.transform})
         return Response(bytes(content), media_type="application/x-protobuf")
     logger.debug(f'{__name__} zone level:{zone_level}, tile width:{tile_width_km}, bbox:{bbox}')
-    zoneslist = dggrs_provider.zoneslist(clip_bound, zone_level, parent_zone=None, returngeometry='zone-region', compact=False)
-    geometry = [shapely.geometry.shape(g.__dict__) for g in zoneslist.geometry]
+    # zoneslist = dggrs_provider.zoneslist(clip_bound, zone_level, parent_zone=None, returngeometry='zone-region', compact=False)
+    zoneslist = dggrs_provider.zoneslist(clip_bound, zone_level, parent_zone=None, returngeometry=None, compact=False)
+    # geometry = [shapely.geometry.shape(g.__dict__) for g in zoneslist.geometry]
     if (collection.collection_provider.dggrs_zoneid_repr != "textual"):
         zoneslist.zones = dggrs_provider.zone_id_from_textual(zoneslist.zones, collection.collection_provider.dggrs_zoneid_repr)
-    zoneslist = gpd.GeoDataFrame({'zone_id': zoneslist.zones}, geometry=geometry).set_index('zone_id')
+    zoneslist = gpd.GeoDataFrame({'zone_id': zoneslist.zones}).set_index('zone_id')
     if (conversion):
         targetdggrs = collection.collection_provider.dggrsId
         if (targetdggrs in list(dggrs_provider.dggrs_conversion.keys())):
@@ -118,19 +119,21 @@ async def query_mvt_tiles(
             indexes_cols.append(dim.name)
             indexes_values.append(dim.grid.coordinates)
         pd_indexes = pd.MultiIndex.from_product(indexes_values, names=indexes_cols)
-    zones_data = gpd.GeoDataFrame(zones_data.data, index=pd_indexes, columns=list(zones_data.cols_meta.keys()))
-    zones_data = zones_data.join(zoneslist).reset_index(names=indexes_cols)
+    zones_data = gpd.GeoDataFrame(zones_data.data, index=pd_indexes, columns=list(zones_data.cols_meta.keys())).reset_index(names=indexes_cols)
+    #zones_data = zones_data.join(zoneslist)
     zones_data[id_col] = zones_data[id_col].astype(zoneslist.index.dtype)
     if (conversion):
-        zones_geometry = zones_data.groupby("target_id")["geometry"].first()
-        zones_data = zones_data.drop(columns="geometry").groupby('target_id').mean()
+        #zones_geometry = zones_data.groupby("target_id")["geometry"].first()
+        zones_data = zones_data.groupby('target_id').mean()
         zones_data = zones_data.drop(columns=indexes_cols)
-        zones_data = zones_data.join(zones_geometry).reset_index(names=indexes_cols)
+        zones_data = zones_data.reset_index(names=indexes_cols)
     if (collection.collection_provider.dggrs_zoneid_repr != 'textual'):
         zones_data[id_col] = dggrs_provider.zone_id_to_textual(zones_data[id_col].values,
                                                                collection.collection_provider.dggrs_zoneid_repr, zone_level)
-    geometry = zones_data['geometry'].values
-    zones_data = zones_data.drop(columns='geometry')
+
+    zoneslist = dggrs_provider.zonesinfo(zones_data[id_col].to_list())
+    geometry = [shapely.geometry.shape(g.__dict__) for g in zoneslist.geometry]
+    #zones_data = zones_data.drop(columns='geometry')
     features = zones_data.to_dict(orient='records')
     features = [{'geometry': geometry[i], 'properties': f} for i, f in enumerate(features)]
     content = mapbox_vector_tile.encode({"name": tilesreq.collectionId, "features": features},
