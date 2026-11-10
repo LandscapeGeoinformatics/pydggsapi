@@ -139,8 +139,8 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
         zone_level = self.get_cells_zone_level(cellIds)[0]
         cellIds = self.zone_id_from_textual(cellIds, "int")
         try:
-            centroids = self._generateZoneGeometries([cellIds], zone_level, True)
-            square_vertices = self._generateZoneGeometries([cellIds], zone_level, False)
+            centroids = self._generateZoneGeometries(cellIds, zone_level, True)
+            square_vertices = self._generateZoneGeometries(cellIds, zone_level, False)
             extents = [shapely.geometry.shape(geojson.__dict__) for geojson in square_vertices]
             extents = [b.bounds for b in extents]
         except Exception as e:
@@ -155,6 +155,8 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
         if (bbox is not None):
             try:
                 bbox = shapely.bounds(bbox)
+                if (bbox[2] == 0.0):
+                    bbox[2] += 0.00001
                 zones_list, _, _ = healpix_geo.nested.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=False)
                 zones_list = set(zones_list)
             except Exception as e:
@@ -187,8 +189,8 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
             lon, lat = healpix_geo.nested.healpix_to_lonlat(zoneIds, refinement_level, self.ellipsoid)
             points = np.stack([lon, lat], axis=-1)
             # for list only consist of one zone, the shape of vertices is [1, 1, 2]
-            if (len(zoneIds) == 1):
-                points = np.squeeze(points, axis=1)
+            #if (len(zoneIds) == 1):
+            #    points = np.squeeze(points, axis=1)
             points = list(map(lambda x: GeoJSONPoint(type="Point", coordinates=(x[0], x[1])), points))
             return points
         else:
@@ -196,8 +198,8 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
             vertices = np.stack([lon, lat], axis=-1)
             vertices = np.squeeze(vertices.view(dtype=np.dtype([('x', 'float64'), ('y', 'float64')])), axis=-1)
             # for list only consist of one zone, the shape of vertices is [1, 1, 4]
-            if (len(zoneIds) == 1):
-                vertices = np.squeeze(vertices, axis=1)
+            #if (len(zoneIds) == 1):
+            #    vertices = np.squeeze(vertices, axis=1)
             polygon = list(map(lambda x: GeoJSONPolygon(type="Polygon", coordinates=[x.tolist()]), vertices))
             return polygon
 
@@ -298,8 +300,8 @@ class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
         zone_level = self.get_cells_zone_level(cellIds)[0]
         cellIds = self.zone_id_from_textual(cellIds, "int")
         try:
-            centroids = self._generateZoneGeometries([cellIds], True)
-            square_vertices = self._generateZoneGeometries([cellIds], False)
+            centroids = self._generateZoneGeometries(cellIds, True)
+            square_vertices = self._generateZoneGeometries(cellIds, False)
             extents = [shapely.geometry.shape(geojson.__dict__) for geojson in square_vertices]
             extents = [b.bounds for b in extents]
         except Exception as e:
@@ -347,8 +349,8 @@ class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
             lon, lat = healpix_geo.zuniq.healpix_to_lonlat(zoneIds, self.ellipsoid)
             points = np.stack([lon, lat], axis=-1)
             # for list only consist of one zone, the shape of vertices is [1, 1, 2]
-            if (len(zoneIds) == 1):
-                points = np.squeeze(points, axis=1)
+            #if (len(zoneIds) == 1):
+            #    points = np.squeeze(points, axis=1)
             points = list(map(lambda x: GeoJSONPoint(type="Point", coordinates=(x[0], x[1])), points))
             return points
         else:
@@ -356,8 +358,8 @@ class HealpixGeoZuniqProvider(AbstractDGGRSProvider):
             vertices = np.stack([lon, lat], axis=-1)
             vertices = np.squeeze(vertices.view(dtype=np.dtype([('x', 'float64'), ('y', 'float64')])), axis=-1)
             # for list only consist of one zone, the shape of vertices is [1, 1, 4]
-            if (len(zoneIds) == 1):
-                vertices = np.squeeze(vertices, axis=1)
+            #if (len(zoneIds) == 1):
+            #    vertices = np.squeeze(vertices, axis=1)
             polygon = list(map(lambda x: GeoJSONPolygon(type="Polygon", coordinates=[x.tolist()]), vertices))
             return polygon
 
