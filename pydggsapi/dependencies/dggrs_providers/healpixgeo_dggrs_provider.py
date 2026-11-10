@@ -157,6 +157,8 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
                 bbox = shapely.bounds(bbox)
                 if (bbox[2] == 0.0):
                     bbox[2] += 0.00001
+                if (bbox[0] == 0.0):
+                    bbox[0] -= 0.00001
                 zones_list, _, _ = healpix_geo.nested.zone_coverage(tuple(bbox.tolist()), zone_level, ellipsoid=self.ellipsoid, flat=True)
                 zones_list = set(zones_list)
             except Exception as e:
@@ -188,18 +190,12 @@ class HealpixGeoNestedProvider(AbstractDGGRSProvider):
         if centroids:
             lon, lat = healpix_geo.nested.healpix_to_lonlat(zoneIds, refinement_level, self.ellipsoid)
             points = np.stack([lon, lat], axis=-1)
-            # for list only consist of one zone, the shape of vertices is [1, 1, 2]
-            #if (len(zoneIds) == 1):
-            #    points = np.squeeze(points, axis=1)
             points = list(map(lambda x: GeoJSONPoint(type="Point", coordinates=(x[0], x[1])), points))
             return points
         else:
             lon, lat = healpix_geo.nested.vertices(zoneIds, refinement_level, self.ellipsoid)
             vertices = np.stack([lon, lat], axis=-1)
             vertices = np.squeeze(vertices.view(dtype=np.dtype([('x', 'float64'), ('y', 'float64')])), axis=-1)
-            # for list only consist of one zone, the shape of vertices is [1, 1, 4]
-            #if (len(zoneIds) == 1):
-            #    vertices = np.squeeze(vertices, axis=1)
             polygon = list(map(lambda x: GeoJSONPolygon(type="Polygon", coordinates=[x.tolist()]), vertices))
             return polygon
 
