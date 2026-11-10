@@ -88,7 +88,7 @@ for collection_name, collection in collections_dict.items():
     maxx, maxy = round(maxx - 0.1, 3), round(maxy - 0.05, 3)
     rf = collection.collection_provider.max_refinement_level - 2
     mygrid = support_grids["healpixgeo_zuniq"]
-    results = mygrid.zone_coverage((minx, miny, maxx, maxy), rf, ellipsoid="WGS84", flat=False)
+    results = mygrid.zone_coverage((minx, miny, maxx, maxy), rf, ellipsoid="WGS84", flat=True)
     zuniq_zones_ids = results[0]
 
     generateZoneGeometry = _zuniq_generateZoneGeometries
@@ -102,7 +102,7 @@ for collection_name, collection in collections_dict.items():
     centroid_df = gpd.GeoDataFrame({'zone_id': textual_zones_ids}, geometry=geometry, crs='wgs84')
 
     non_exist_bbox = non_exist_aoi.bounds
-    non_exist_zone_ids = mygrid.zone_coverage(tuple(non_exist_bbox), rf, ellipsoid="WGS84", flat=False)
+    non_exist_zone_ids = mygrid.zone_coverage(tuple(non_exist_bbox), rf, ellipsoid="WGS84", flat=True)
     non_exist_zone_ids = non_exist_zone_ids[0]
     textual_non_exist_zone_ids = list(map(lambda x: f"{str(x)}", non_exist_zone_ids))
 

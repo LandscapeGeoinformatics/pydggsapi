@@ -22,6 +22,8 @@ from typing import List, Any
 from dataclasses import dataclass
 import logging
 
+import time
+
 logger = logging.getLogger()
 
 
@@ -71,7 +73,7 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
         except KeyError as e:
             logger.error(f'{__name__} get zone_grp for resolution {res} failed: {e}')
             return result
-        ds = datasource.filehandle[zone_grp].to_dataset().chunk('auto').unify_chunks()
+        ds = datasource.filehandle[zone_grp].to_dataset()
         datetime_col = datasource.datetime_col
         # create the temporal dim for non-temporal datasource if collection_timestamp is set
         # only for temporal query (include_datetime == True)
@@ -81,6 +83,7 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             ds = ds.assign_coords({datetime_col: [collection_timestamp]})
         id_col = datasource.id_col if (datasource.id_col != "") else zone_grp
         # in future, we may consider using xdggs-dggrid4py
+        start = time.time()
         try:
             if (cql_filter is not None):
                 fieldmapping = self.get_datadictionary(datasource_id).data
@@ -89,13 +92,13 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                     raise DatetimeNotDefinedError(f"{__name__} filter by datetime is not supported: datetime_col is none")
                 if (include_datetime):
                     fieldmapping.update({zone_datetime_placeholder: datetime_col})
+                ds = ds.chunk('auto').unify_chunks()
                 cql_sql = to_sql_where(cql_filter, fieldmapping)
                 #ctx = xql.XarrayContext()
                 #ctx.from_dataset('ds', ds)
                 table = read_xarray_table(ds)
                 ctx = SessionContext()
                 ctx.register_table('ds', table)
-
                 if ("*" in datasource.data_cols):
                     incl = ",".join(include_properties) if include_properties else "*"
                     excl = datasource.exclude_data_cols or []
@@ -113,13 +116,20 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
             else:
                 cols = OrderedSet(ds.data_vars) if ("*" in datasource.data_cols) else OrderedSet(datasource.data_cols)
                 cols = list(cols - OrderedSet(datasource.exclude_data_cols))
+                # for xdggs: when dimension (cells) != cell_ids to_dataframe()
+                # will result in an extra column for the index.
                 dimension = ds[id_col].dims[0]
-                zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
+                pos = np.where(ds[id_col].isin(zoneIds))[0]
+                zarr_result = ds.isel({dimension: pos})
+                # zarr_result = ds.query({dimension: f'{id_col} in {zoneIds}'})
                 zarr_result = zarr_result[cols]
+                if ("xdggs" in str(zarr_result.xindexes.get(id_col).__class__)):
+                    zarr_result = zarr_result.drop_indexes(id_col).swap_dims({dimension: id_col})
         except Exception as e:
             # Zarr will raise exception if nothing matched
             logger.error(f'{__name__} {datasource_id} sel failed: {e}')
             return result
+        logger.debug(f"query time: {time.time() - start}")
         if (zarr_result[id_col].size == 0):
             return result
         if (check_if_exists_only):
@@ -150,11 +160,14 @@ class ZarrCollectionProvider(AbstractCollectionProvider):
                                            grid=DimensionGrid(cellsCount=len(values), coordinates=values.tolist())
                                            )
                                  )
-
-        grid = pd.MultiIndex.from_product(grid_indexs_value, names=grid_cols).to_frame(index=False)
         # flatten the zarr dataset to pandas dataframe and apply paddding
+        # zarr_result = zarr_result.to_dataframe().reset_index()
+        zarr_result = zarr_result.load(scheduler="threads")
         zarr_result = zarr_result.to_dataframe().reset_index()
+        #zarr_result = zarr_result.to_dask_dataframe(set_index=False).compute()
+
         if (input_zoneIds_padding):
+            grid = pd.MultiIndex.from_product(grid_indexs_value, names=grid_cols).to_frame(index=False)
             zarr_result = pd.merge(grid, zarr_result, how='left', on=grid_cols)
         zone_dates = zarr_result[datetime_col].values.astype(str).tolist() if (datetime_col) else None
         zoneIds = zarr_result[id_col].tolist()

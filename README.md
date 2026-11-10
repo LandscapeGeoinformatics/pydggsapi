@@ -4,7 +4,9 @@
 
 A python FastAPI OGC DGGS API implementation
 
-https://pydggsapi.readthedocs.io/en/latest/
+Paper published in the SoftwareX journal: https://doi.org/10.1016/j.softx.2026.103042
+
+Documentations: https://pydggsapi.readthedocs.io/en/latest/
 
 
 

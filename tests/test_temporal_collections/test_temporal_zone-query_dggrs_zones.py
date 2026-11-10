@@ -12,6 +12,7 @@ from tinydb import TinyDB
 import tempfile
 import shapely
 import numpy as np
+import xarray as xr
 import pandas as pd
 from dggal import Application, pydggal_setup, CRS, ogc, epsg, GeoExtent, Array, GeoPoint
 from dggal import IVEA7H, ISEA7H_Z7, rHEALPix, HEALPix
@@ -107,8 +108,15 @@ for collection_name, collection in collections_dict.items():
         # It is a data tree
         dt = cp.datasources[datasource_id].filehandle
         zone_groups = cp.datasources[datasource_id].zone_groups
-        ds1 = dt[zone_groups[rf1]].to_dataset().to_dataframe()
-        ds2 = dt[zone_groups[rf2]].to_dataset().to_dataframe()
+        id_col = cp.datasources[datasource_id].id_col
+        ds1 = dt[zone_groups[rf1]].to_dataset()
+        ds2 = dt[zone_groups[rf2]].to_dataset()
+        if (not isinstance(ds1.xindexes.get(id_col), xr.core.indexes.PandasIndex)):
+            ds1 = ds1.drop_indexes(id_col).reset_coords()
+        if (not isinstance(ds2.xindexes.get(id_col), xr.core.indexes.PandasIndex)):
+            ds2 = ds2.drop_indexes(id_col).reset_coords()
+        ds1 = ds1.to_dataframe()
+        ds2 = ds2.to_dataframe()
         ds1 = ds1.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds1.columns) else ds1
         ds2 = ds2.drop('spatial_ref', axis=1).reset_index() if ("saptial_ref" in ds2.columns) else ds2
     elif (isinstance(cp, ParquetCollectionProvider)):
