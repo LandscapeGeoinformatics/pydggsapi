@@ -5,7 +5,7 @@ dependencies:
   - pyopenssl>=20.0.1
   - python>=3.12,<3.14
   - requests>=2.25.1
-  - dggrid
+  - dggrid==8.43
   - geojson
   - geopandas
   - numpy
