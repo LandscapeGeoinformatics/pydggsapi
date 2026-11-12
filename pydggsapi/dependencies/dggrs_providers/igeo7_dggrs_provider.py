@@ -339,7 +339,7 @@ class IGEO7v2Provider(IGEO7Provider):
 
     def __init__(self, **params):
         # Avoid import error in case of dggrid4py <=0.7.2, which doesn't support DGGRIDv9,
-        from dggrdi4py import DGGRIDv9
+        from dggrid4py import DGGRIDv9
 
         executable = os.environ['DGGRID_PATH']
         working_dir = tempfile.mkdtemp()
