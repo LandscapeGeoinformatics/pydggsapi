@@ -17,12 +17,13 @@ from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel, ReturnGeome
 
 import os
 import tempfile
+import shutil
 import logging
 import shapely
 import numpy as np
 import decimal
 from typing import Any, Union, List, Final, Optional, get_args
-from dggrid4py import DGGRIDv8
+from dggrid4py import DGGRIDv8, DGGRIDv9
 from dggrid4py.igeo7 import get_z7string_resolution, z7hex_to_z7string
 from dggrid4py.auxlat import geoseries_to_authalic, geoseries_to_geodetic
 from geopandas.geoseries import GeoSeries
@@ -34,7 +35,39 @@ logger = logging.getLogger()
 
 load_dotenv()
 
+igeo7cell_statistics = {0: {"Cells": 12, "Area (km^2)": 51006562.1724089, "CLS (km)": 8199.5003701},
+                        1: {"Cells": 72, "Area (km^2)": 7286651.7389156, "CLS (km)": 3053.2232428},
+                        2: {"Cells": 492, "Area (km^2)": 1040950.2484165, "CLS (km)": 1151.6430095},
+                        3: {"Cells": 3432, "Area (km^2)": 148707.1783452, "CLS (km)": 435.1531492},
+                        4: {"Cells": 24012, "Area (km^2)": 21243.8826207, "CLS (km)": 164.4655799},
+                        5: {"Cells": 168072, "Area (km^2)": 3034.8403744, "CLS (km)": 62.1617764},
+                        6: {"Cells": 1176492, "Area (km^2)": 433.5486249, "CLS (km)": 23.4949231},
+                        7: {"Cells": 8235432, "Area (km^2)": 61.9355178, "CLS (km)": 8.8802451},
+                        8: {"Cells": 57648012, "Area (km^2)": 8.8479311, "CLS (km)": 3.3564171},
+                        9: {"Cells": 403536072, "Area (km^2)": 1.2639902, "CLS (km)": 1.2686064},
+                        10: {"Cells": 2824752492, "Area (km^2)": 0.18057, "CLS (km)": 0.4794882},
+                        11: {"Cells": 19773267432, "Area (km^2)": 0.0257957, "CLS (km)": 0.1812295},
+                        12: {"Cells": 138412872012, "Area (km^2)": 0.0036851, "CLS (km)": 0.0684983},
+                        13: {"Cells": 968890104072, "Area (km^2)": 0.0005264, "CLS (km)": 0.0258899},
+                        14: {"Cells": 6782230728492, "Area (km^2)": 0.0000752, "CLS (km)": 0.0097855},
+                        15: {"Cells": 47475615099432, "Area (km^2)": 0.0000107, "CLS (km)": 0.0036986},
+                        16: {"Cells": 332329305696012, "Area (km^2)": 0.0000015348198699, "CLS (km)": 0.0013979246590466},
+                        17: {"Cells": 2326305139872072, "Area (km^2)": 0.0000002192599814, "CLS (km)": 0.0005283658570631},
+                        18: {"Cells": 16284135979104492, "Area (km^2)": 0.0000000313228545, "CLS (km)": 0.0001997035227209},
+                        19: {"Cells": 113988951853731432, "Area (km^2)": 0.0000000044746935, "CLS (km)": 0.0000754808367233},
+                        20: {"Cells": 797922662976120012, "Area (km^2)": 0.0000000006392419, "CLS (km)": 0.0000285290746744},
+                        }
 
+
+@dataclass
+class IGEO7v2MetafileConfig():
+    # Z7 String config
+    input_hier_ndx_form: str = 'DIGIT_STRING'
+    output_hier_ndx_form: str = 'DIGIT_STRING'
+
+
+# Follows the definition of IGEO7v1
+# https://dggrid4py.readthedocs.io/en/latest/IGEO7.html
 @dataclass
 class IGEO7MetafileConfig():
     # Z7 String config
@@ -46,27 +79,9 @@ class IGEO7MetafileConfig():
     output_hier_ndx_system: str = 'Z7'
     output_hier_ndx_form: str = 'DIGIT_STRING'
     # initial vertex lon setting
-    dggs_vert0_lon: decimal.Decimal | float | str = 11.20
+    dggs_vert0_lon: decimal.Decimal | float | str = 11.25
     dggs_vert0_lat: Final[decimal.Decimal | float | str] = 58.28252559
     dggs_vert0_azimuth: Final[decimal.Decimal | float | str] = 0.0
-
-
-# Alway returns a GeoSeries
-def _authalic_to_geodetic(geometry, convert: bool) -> GeoSeries:
-    if (not isinstance(geometry, GeoSeries)):
-        geometry = GeoSeries(geometry)
-    if (not convert):
-        return geometry
-    return geoseries_to_geodetic(geometry)
-
-
-# Alway returns a GeoSeries
-def _geodetic_to_authalic(geometry, convert: bool) -> GeoSeries:
-    if (not isinstance(geometry, GeoSeries)):
-        geometry = GeoSeries(geometry)
-    if (not convert):
-        return geometry
-    return geoseries_to_authalic(geometry)
 
 
 def z7textual_to_z7int(z7_textual_zone_id: str):
@@ -96,35 +111,14 @@ class IGEO7Provider(AbstractDGGRSProvider):
         executable = os.environ['DGGRID_PATH']
         working_dir = tempfile.mkdtemp()
         self.dggrid_instance = DGGRIDv8(executable=executable, working_dir=working_dir, silent=True)
-        self.data = {0: {"Cells": 12, "Area (km^2)": 51006562.1724089, "CLS (km)": 8199.5003701},
-                     1: {"Cells": 72, "Area (km^2)": 7286651.7389156, "CLS (km)": 3053.2232428},
-                     2: {"Cells": 492, "Area (km^2)": 1040950.2484165, "CLS (km)": 1151.6430095},
-                     3: {"Cells": 3432, "Area (km^2)": 148707.1783452, "CLS (km)": 435.1531492},
-                     4: {"Cells": 24012, "Area (km^2)": 21243.8826207, "CLS (km)": 164.4655799},
-                     5: {"Cells": 168072, "Area (km^2)": 3034.8403744, "CLS (km)": 62.1617764},
-                     6: {"Cells": 1176492, "Area (km^2)": 433.5486249, "CLS (km)": 23.4949231},
-                     7: {"Cells": 8235432, "Area (km^2)": 61.9355178, "CLS (km)": 8.8802451},
-                     8: {"Cells": 57648012, "Area (km^2)": 8.8479311, "CLS (km)": 3.3564171},
-                     9: {"Cells": 403536072, "Area (km^2)": 1.2639902, "CLS (km)": 1.2686064},
-                     10: {"Cells": 2824752492, "Area (km^2)": 0.18057, "CLS (km)": 0.4794882},
-                     11: {"Cells": 19773267432, "Area (km^2)": 0.0257957, "CLS (km)": 0.1812295},
-                     12: {"Cells": 138412872012, "Area (km^2)": 0.0036851, "CLS (km)": 0.0684983},
-                     13: {"Cells": 968890104072, "Area (km^2)": 0.0005264, "CLS (km)": 0.0258899},
-                     14: {"Cells": 6782230728492, "Area (km^2)": 0.0000752, "CLS (km)": 0.0097855},
-                     15: {"Cells": 47475615099432, "Area (km^2)": 0.0000107, "CLS (km)": 0.0036986},
-                     16: {"Cells": 332329305696012, "Area (km^2)": 0.0000015348198699, "CLS (km)": 0.0013979246590466},
-                     17: {"Cells": 2326305139872072, "Area (km^2)": 0.0000002192599814, "CLS (km)": 0.0005283658570631},
-                     18: {"Cells": 16284135979104492, "Area (km^2)": 0.0000000313228545, "CLS (km)": 0.0001997035227209},
-                     19: {"Cells": 113988951853731432, "Area (km^2)": 0.0000000044746935, "CLS (km)": 0.0000754808367233},
-                     20: {"Cells": 797922662976120012, "Area (km^2)": 0.0000000006392419, "CLS (km)": 0.0000285290746744},
-                     }
+        self.data = igeo7cell_statistics
         self.dggrs = 'IGEO7'
-        self.wgs84_geodetic_conversion = True
+        self.apply_authalic_conversion = True
         crs = params.pop("crs", CrsModel("authalic"))
         if (not isinstance(crs.root, str)):
             raise NotImplementedError("CRS model not support, please use wkt")
         if (crs.root.lower() != "wgs84"):
-            self.wgs84_geodetic_conversion = False
+            self.apply_authalic_conversion = False
         self.properties = IGEO7MetafileConfig(**params)
 
     def convert(self, zoneIds: List[str], targedggrs: str,
@@ -142,18 +136,18 @@ class IGEO7Provider(AbstractDGGRSProvider):
 
     def generate_hexgrid(self, bbox, resolution, authalic_conversion=True):
         # ISEA7H grid at resolution, for extent of provided WGS84 rectangle into GeoDataFrame
-        bbox = _geodetic_to_authalic(bbox, self.wgs84_geodetic_conversion)[0]
+        bbox = self._geodetic_to_authalic(bbox)[0]
         gdf = self.dggrid_instance.grid_cell_polygons_for_extent(self.dggrs, resolution, clip_geom=bbox, **self.properties.__dict__)
         if (authalic_conversion):
-            gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+            gdf.geometry = self._authalic_to_geodetic(gdf.geometry)
         return gdf
 
     def generate_hexcentroid(self, bbox, resolution, authalic_conversion=True):
         # ISEA7H grid at resolution, for extent of provided WGS84 rectangle into GeoDataFrame
-        bbox = _geodetic_to_authalic(bbox, self.wgs84_geodetic_conversion)[0]
+        bbox = self._geodetic_to_authalic(bbox)[0]
         gdf = self.dggrid_instance.grid_cell_centroids_for_extent(self.dggrs, resolution, clip_geom=bbox, **self.properties.__dict__)
         if (authalic_conversion):
-            gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+            gdf.geometry = self._authalic_to_geodetic(gdf.geometry)
         return gdf
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
@@ -161,9 +155,10 @@ class IGEO7Provider(AbstractDGGRSProvider):
         gdf = self.dggrid_instance.grid_cell_centroids_from_cellids(cellid, self.dggrs, zone_level,
                                                                     clip_subset_type=clip_subset_type,
                                                                     clip_cell_res=clip_cell_res,
-                                                                    **self.properties.__dict__)
+                                                                    **self.properties.__dict__).set_index("name")
+        gdf = gdf.loc[cellid].reset_index()
         if (authalic_conversion):
-            gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+            gdf.geometry = self._authalic_to_geodetic(gdf.geometry)
         return gdf
 
     # default values from dggrid4py on clip_subset_type and clip_cell_res
@@ -171,18 +166,19 @@ class IGEO7Provider(AbstractDGGRSProvider):
         gdf = self.dggrid_instance.grid_cell_polygons_from_cellids(cellid, self.dggrs, zone_level,
                                                                    clip_subset_type=clip_subset_type,
                                                                    clip_cell_res=clip_cell_res,
-                                                                   **self.properties.__dict__)
+                                                                   **self.properties.__dict__).set_index("name")
+        gdf = gdf.loc[cellid].reset_index()
         if (authalic_conversion):
-            gdf.geometry = _authalic_to_geodetic(gdf.geometry, self.wgs84_geodetic_conversion)
+            gdf.geometry = self._authalic_to_geodetic(gdf.geometry)
         return gdf
 
     def cellid_from_centroid(self, geodf_points_wgs84, zoomlevel):
-        geodf_points_wgs84 = _geodetic_to_authalic(geodf_points_wgs84, self.wgs84_geodetic_conversion)
+        geodf_points_wgs84 = self._geodetic_to_authalic(geodf_points_wgs84)
         gdf = self.dggrid_instance.cells_for_geo_points(geodf_points_wgs84, True, self.dggrs, zoomlevel, **self.properties.__dict__)
         return gdf
 
     def cellids_from_extent(self, clip_geom, zoomlevel):
-        clip_geom = _geodetic_to_authalic(clip_geom, self.wgs84_geodetic_conversion)[0]
+        clip_geom = self._geodetic_to_authalic(clip_geom)[0]
         gdf = self.dggrid_instance.grid_cellids_for_extent(self.dggrs, zoomlevel, clip_geom=clip_geom, **self.properties.__dict__)
         return gdf
 
@@ -244,6 +240,22 @@ class IGEO7Provider(AbstractDGGRSProvider):
             raise Exception(f'{__name__} get_relative_zonelevels, get children failed {e}')
 
         return DGGRSProviderGetRelativeZoneLevelsReturn(relative_zonelevels=children)
+
+    # Alway returns a GeoSeries
+    def _authalic_to_geodetic(self, geometry) -> GeoSeries:
+        if (not isinstance(geometry, GeoSeries)):
+            geometry = GeoSeries(geometry)
+        if (not self.apply_authalic_conversion):
+            return geometry
+        return geoseries_to_geodetic(geometry)
+
+    # Alway returns a GeoSeries
+    def _geodetic_to_authalic(self, geometry) -> GeoSeries:
+        if (not isinstance(geometry, GeoSeries)):
+            geometry = GeoSeries(geometry)
+        if (not self.apply_authalic_conversion):
+            return geometry
+        return geoseries_to_authalic(geometry)
 
     def zonesinfo(self, cellIds: List[str]):
         zone_level = get_z7string_resolution(cellIds[0])
@@ -313,7 +325,7 @@ class IGEO7Provider(AbstractDGGRSProvider):
             if (returngeometry != 'zone-centroid'):
                 hex_gdf = self.hexagon_from_cellid(hex_gdf.index.values, zone_level, authalic_conversion=False)
                 hex_gdf.set_index("name", inplace=True)
-            hex_gdf['geometry'] = _authalic_to_geodetic(hex_gdf['geometry'], self.wgs84_geodetic_conversion)
+            hex_gdf['geometry'] = self._authalic_to_geodetic(hex_gdf['geometry'])
             geotype = GeoJSONPoint if (returngeometry == 'zone-centroid') else GeoJSONPolygon
             geometry = [geotype(**eval(shapely.to_geojson(g))) for g in hex_gdf['geometry'].values.tolist()]
         area = [self.data[zone_level]['Area (km^2)'] * 1000000] * len(hex_gdf)
@@ -321,3 +333,16 @@ class IGEO7Provider(AbstractDGGRSProvider):
         return DGGRSProviderZonesListReturn(**{'zones': hex_gdf.index.values.astype(str).tolist(),
                                                'geometry': geometry,
                                                'returnedAreaMetersSquare': area})
+
+
+class IGEO7v2Provider(IGEO7Provider):
+
+    def __init__(self, **params):
+        executable = shutil.which("dggrid")
+        working_dir = tempfile.mkdtemp()
+        self.dggrid_instance = DGGRIDv9(executable=executable, working_dir=working_dir, silent=True)
+        self.data = igeo7cell_statistics
+        self.dggrs = 'IGEO7'
+        self.apply_authalic_conversion = False
+        params.pop("crs", None)
+        self.properties = IGEO7v2MetafileConfig(**params)
