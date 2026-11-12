@@ -17,13 +17,12 @@ from pydggsapi.schemas.ogc_dggs.common_ogc_dggs_api import CrsModel, ReturnGeome
 
 import os
 import tempfile
-import shutil
 import logging
 import shapely
 import numpy as np
 import decimal
 from typing import Any, Union, List, Final, Optional, get_args
-from dggrid4py import DGGRIDv8, DGGRIDv9
+from dggrid4py import DGGRIDv8
 from dggrid4py.igeo7 import get_z7string_resolution, z7hex_to_z7string
 from dggrid4py.auxlat import geoseries_to_authalic, geoseries_to_geodetic
 from geopandas.geoseries import GeoSeries
@@ -108,6 +107,7 @@ vz7hex_to_z7textual = np.vectorize(z7hex_to_z7string)
 class IGEO7Provider(AbstractDGGRSProvider):
 
     def __init__(self, **params):
+
         executable = os.environ['DGGRID_PATH']
         working_dir = tempfile.mkdtemp()
         self.dggrid_instance = DGGRIDv8(executable=executable, working_dir=working_dir, silent=True)
@@ -338,7 +338,10 @@ class IGEO7Provider(AbstractDGGRSProvider):
 class IGEO7v2Provider(IGEO7Provider):
 
     def __init__(self, **params):
-        executable = shutil.which("dggrid")
+        # Avoid import error in case of dggrid4py <=0.7.2, which doesn't support DGGRIDv9,
+        from dggrdi4py import DGGRIDv9
+
+        executable = os.environ['DGGRID_PATH']
         working_dir = tempfile.mkdtemp()
         self.dggrid_instance = DGGRIDv9(executable=executable, working_dir=working_dir, silent=True)
         self.data = igeo7cell_statistics
