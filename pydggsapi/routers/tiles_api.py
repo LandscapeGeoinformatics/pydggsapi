@@ -25,6 +25,7 @@ import pandas as pd
 import geopandas as gpd
 import mapbox_vector_tile
 import logging
+import time
 # logging.basicConfig(format='%(asctime)s.%(msecs)03d %(levelname)s {%(module)s} [%(funcName)s] %(message)s',
 #                    datefmt='%Y-%m-%d,%H:%M:%S', level=logging.INFO)
 logger = logging.getLogger()
@@ -144,9 +145,9 @@ async def query_mvt_tiles(
             zones_data.drop(columns="geometry").to_dict("records")
         )
     ]
-    content = mapbox_vector_tile.encode({"name": tilesreq.collectionId, "features": features},
-                                        quantize_bounds=bbox)
-                                        #default_options={"transformer": transformer.transform})
+    s = time.time()
+    content = mapbox_vector_tile.encode({"name": tilesreq.collectionId, "features": features}, quantize_bounds=bbox)
+    print(f"mvt: {time.time()-s} {len(content)}")
 
     return Response(bytes(content), media_type="application/x-protobuf")
 
